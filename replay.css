@@ -1,0 +1,123 @@
+div.outer{
+	display: inline-block;
+	/*border: 1px solid black;*/
+	vertical-align: top;
+}
+
+div.cell{
+	display: inline-block;
+	height: 15px;
+	width: 15px;
+	margin: 0px;
+	padding: 0px;
+	/*border: 1px solid black;*/
+	float: left;
+}
+
+.A{
+	background-color: #AA0000;
+}
+
+.a{
+	background-color: #FF0000;
+}
+
+.B{
+	background-color: #00AA00;
+}
+
+.b{
+	background-color: #00FF00;
+}
+
+.C{
+	background-color: #0000AA;
+}
+
+.c{
+	background-color: #0000FF;
+}
+
+.D{
+	background-color: #AAAA00;
+}
+
+.d{
+	background-color: #FFFF00;
+}
+
+.E{
+	background-color: #AA00AA;
+}
+
+.e{
+	background-color: #FF00FF;
+}
+
+.F{
+	background-color: #00AAAA;
+}
+
+.f{
+	background-color: #00FFFF;
+}
+
+.G{
+	background-color: #000000;
+}
+
+.g{
+	background-color: #555555;
+}
+
+.H{
+	background-color: #550000;
+}
+
+.h{
+	background-color: #AA0000;
+}
+
+.I{
+	background-color: #005500;
+}
+
+.i{
+	background-color: #00AA00;
+}
+
+.J{
+	background-color: #000055;
+}
+
+.j{
+	background-color: #0000AA;
+}
+
+.K{
+	background-color: #555500;
+}
+
+.k{
+	background-color: #AAAA00;
+}
+
+.L{
+	background-color: #550055;
+}
+
+.l{
+	background-color: #AA00AA;
+}
+
+.M{
+	background-color: #005555;
+}
+
+.m{
+	background-color: #00AAAA;
+}
+
+.\*{
+	background-color: gold;
+}

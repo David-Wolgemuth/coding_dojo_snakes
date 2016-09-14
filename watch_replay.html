@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+	<head>
+		<title>Watch Replay</title>
+		<link rel="stylesheet" type="text/css" href="replay.css">
+		<script type="text/javascript" src="angular.js"></script>
+		<script type="text/javascript" src="log.js"></script>
+		<script type="text/javascript">
+			console.log(log)
+
+			var myAppModule = angular.module("myApp", [])
+			myAppModule.controller("snakeController", function($scope, $interval){
+				$scope.frame = -1
+
+				function changeGrid(){
+					$scope.frame++
+
+					if($scope.frame == log.length){
+						$interval.cancel(timer)
+					} else {
+						$scope.curr_frame = log[$scope.frame]
+					}
+
+				}
+
+				timer = $interval(changeGrid, 50)
+
+				$scope.$on("$destroy", function(){
+					$interval.cancel(timer)
+				})
+			})
+		</script>
+	</head>
+	<body>
+		<div ng-controller="snakeController">
+			<p>{{ frame }}</p>
+			<div class="outer">
+				<div class="grid">
+					<div ng-repeat="row in curr_frame.grid track by $index" class="row">
+						<div ng-repeat="cell in row track by $index" class="cell {{cell}}"></div>
+					</div>
+				</div>
+			</div>
+			<div class="outer">
+				<p ng-repeat="(player, score) in curr_frame.scores" class="{{player.slice(-1)}}">{{player}}: {{score}} </p>
+			</div>
+		</div>
+	</body>
+</html>
