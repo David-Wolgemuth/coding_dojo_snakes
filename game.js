@@ -50,7 +50,6 @@ function snakes(bots, keep_log){
 			}
 		}
 
-		// console.log("make_map function", map)
 		return map
 	}
 
@@ -165,7 +164,6 @@ function snakes(bots, keep_log){
 
 		grid[new_snake.head.row][new_snake.head.col] = new_snake.letter.toUpperCase()
 
-		// new_snake.print()
 		snakes.push(new_snake)
 		scores[new_snake.name+" "+new_snake.letter] = snakes[snakes.length-1].score
 	};
@@ -181,16 +179,6 @@ function snakes(bots, keep_log){
 		log.push({"grid": copy(grid), "scores": copy(scores)})
 	}
 
-	// console.log(grid)
-	// console.log("*******")
-	// console.log(make_map(snakes[0]))
-
-	// move_to_cell(snakes[0], 3, 6)
-
-	// console.log("*******")
-	// snakes[0].print()
-	// console.log(make_map(snakes[0]))
-
 	MAX_TURNS = 5000
 
 	while(snakes && MAX_TURNS && APPLES){
@@ -199,22 +187,10 @@ function snakes(bots, keep_log){
 		for (var i = 0; i < snakes.length; i++) {
 			if(snakes[i].timeout){ 
 				snakes[i].timeout-- 
-			} else {
-				// console.log("*******")
-				
+			} else {			
 				var move = snakes[i].move(make_map(snakes[i])).toLowerCase()
-				
-				// console.log(move)
-				// console.log(moves[move])
-
 				next = find_new_cell(snakes[i], moves[move])
-
-				// console.log(next)
-
 				move_to_cell(snakes[i], next[0], next[1])
-
-				// snakes[0].print()
-				// console.log(grid)
 
 				if(keep_log){
 					log.push({"grid": copy(grid), "scores": copy(scores)})
@@ -223,10 +199,6 @@ function snakes(bots, keep_log){
 		};
 	}
 
-	// console.log("*******")
-	// snakes[0].print()
-	// console.log(grid)
-
 	if(keep_log){
 		var output = "var log = " + JSON.stringify(log, null, "\t")
 		fs.writeFile("log.js", output, function(err){
@@ -234,17 +206,35 @@ function snakes(bots, keep_log){
 		})
 	}
 
-	console.log(scores)
+	return scores
 
 }
 
+function play_many_games(bots, number_of_games){
+	if(!number_of_games){ number_of_games = 100 }
+	
+	running_totals = {}
+
+	for(var i = 0; i < bots.length; i++){
+		running_totals[bots[i].name] = 0
+	}
+
+	for(var games = 0; games < 100; games++){
+		var scores = snakes(bots)
+		for(var bot in scores){
+			running_totals[bot.slice(0,-2)] += scores[bot]
+		}
+	}
+
+	return running_totals
+}
+
+// Bots go here
 function random_snake(){
 	return "NEWS"[Math.floor(Math.random()*4)] 
 }
 
 function greedy_snake(map){
-	// console.log(this.head)
-	// console.log(map)
 	if(map[mod(this.head.row-1, map.length)][this.head.col]=="*"){
 		return "n"
 	} else if(map[mod(this.head.row+1, map.length)][this.head.col]=="*") {
@@ -258,16 +248,56 @@ function greedy_snake(map){
 	}
 }
 
-bots = [
-	{"name": "Westy", "move": function(){ return "w" }},
-	{"name": "Northy", "move": function(){ return "n" }},
-	{"name": "Southy", "move": function(){ return "s" }},
+function diagonal(){
+	this.last_north = !this.last_north
+	if(this.last_north){
+		return "e"
+	} else {
+		return "n"
+	}
+}
+
+function spiral(){
+	// This could lead to excellence, or serious injury
+	// https://www.youtube.com/watch?v=2aeOBZ7gVPY
+	if(!this.dir_index){ this.dir_index = 1 }
+	if(!this.side_length){ this.side_length = 3}
+	if(!this.counter){ 
+		this.counter = Math.ceil(this.side_length/this.length)
+		this.side_length++
+	} else {
+		this.counter--
+	}
+	
+	dirs = ["e", "n", "w", "s"]
+
+	return dirs[this.side_length % 4]
+}
+
+function apple_turnover(){
+	// Turns every time it eats an apple
+	dirs = ["e", "s", "w", "n"]
+	return dirs[this.score % 4]
+}
+
+var bots = [
+	// {"name": "Westy", "move": function(){ return this.head.col - this.head.next.col == 1 ? "n" : "w" }},
+	// {"name": "Northy", "move": function(){ return "n" }},
+	// {"name": "Southy", "move": function(){ return "s" }},
 	// {"name": "Easty", "move": function(){ return "e" }},
 	{"name": "random_snake", "move": random_snake},
-	{"name": "greedy_snake", "move": greedy_snake}
+	{"name": "greedy_snake", "move": greedy_snake},
+	{"name": "Diagonal", "move": diagonal},
+	{"name": "The spiraling snake will make you go insane (everyone wants to see that groovy thing)", "move": spiral},
+	// {"name": "Don't spend the rest of your life wondering", "move": spiral},
+	// {"name": "Putting all reason aside you decide to exchange what you've got for something hypnotic and strange", "move": spiral},
+	// {"name": "Now that you've tried it you're back to deny it, the spiraling snake is a fraud and a fake", "move": spiral},
+	{"name": "apple_turnover", "move": apple_turnover}
 ]
 
 snakes(bots, keep_log=true)
+
+// console.log(play_many_games(bots))
 
 /* Snake import test
 var my_snake = new Snake()

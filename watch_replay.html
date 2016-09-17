@@ -6,7 +6,7 @@
 		<script type="text/javascript" src="angular.js"></script>
 		<script type="text/javascript" src="log.js"></script>
 		<script type="text/javascript">
-			console.log(log)
+			var TIMER_INTERVAL = 50
 
 			var myAppModule = angular.module("myApp", [])
 			myAppModule.controller("snakeController", function($scope, $interval){
@@ -23,7 +23,7 @@
 
 				}
 
-				timer = $interval(changeGrid, 50)
+				timer = $interval(changeGrid, TIMER_INTERVAL)
 
 				$scope.$on("$destroy", function(){
 					$interval.cancel(timer)
