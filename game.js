@@ -80,7 +80,7 @@ function snakes(bots, keep_log){
 	function move_to_cell(snake, row, col){
 		var new_cell = grid[row][col]
 
-		if(new_cell!="*" && new_cell!=".") {
+		if(new_cell !== "*" && new_cell !== ".") {
 			kill_snake(snake)
 		} else {
 			grid[snake.head.row][snake.head.col] = snake.letter
@@ -179,7 +179,7 @@ function snakes(bots, keep_log){
 		log.push({"grid": copy(grid), "scores": copy(scores)})
 	}
 
-	MAX_TURNS = 5000
+	MAX_TURNS = 500
 
 	while(snakes && MAX_TURNS && APPLES){
 		MAX_TURNS--
@@ -251,6 +251,9 @@ function greedy_snake(map){
 function diagonal(){
 	this.last_north = !this.last_north
 	if(this.last_north){
+		if (Math.random() < 0.5) {
+			return "s";
+		}
 		return "e"
 	} else {
 		return "n"
@@ -280,19 +283,122 @@ function apple_turnover(){
 	return dirs[this.score % 4]
 }
 
+function snake_camel_case (map)
+{
+	var c = this.head.col;
+	var r = this.head.row;
+
+	var cc = this.head.next.col;
+	var rr = this.head.next.row;
+
+	var next = map[mod(r+(r-rr), map.length)][mod(c+(c-cc), map.length)];
+
+	function either (x, y) {
+		return (Math.random() < 0.5) ? x : y;	
+	}
+
+	function at (d) {
+		switch (d) {
+			case "n":
+				return map[mod(r-1, map.length)][c];
+			case "s":
+				return map[mod(r+1, map.length)][c];
+			case "e":
+				return map[r][mod(c+1, map.length)];
+			case "w":
+				return map[r][mod(c-1, map.length)];
+		}
+		return null;
+	}
+	// console.log(next);	
+	switch (next) {
+		case "*":
+			return "?";
+		case ".":
+			break;
+		default:
+			var dirs = ["n", "s", "e", "w"];
+			for (var i = 0; i < dirs.length; i++) {
+				if (at(dirs[i]) === "*" || at(dirs[i]) === ".") {
+					return dirs[i];
+				}
+			}
+	}
+
+	switch (map[r][mod(c-1, map.length)]) {
+		case "*":
+			return "w";
+		case ".":
+			break;
+		case this.letter:
+			break;
+		default:
+			return either("n", "s");
+	}
+	switch (map[r][mod(c+1, map.length)]) {
+		case "*":
+			return "e";
+		case ".":
+			break;
+		case this.letter:
+			break;
+		default:
+			return either("n", "s");
+	}
+	switch (map[mod(r-1, map.length)][c]) {
+		case "*":
+			return "n";
+		case ".":
+			break;
+		case this.letter:
+			break;
+		default:
+			return either("e", "w");
+	}
+	switch (map[mod(r+1, map.length)][c]) {
+		case "*":
+			return "n";
+		case ".":
+			break;
+		case this.letter:
+			break;
+		default:
+			return either("e", "w");
+	}
+	return "?";
+}
+function cool_snake (map, snake) {
+	// console.log(snake);
+	snake.saved.num = snake.saved.num ? snake.saved.num + 1 : 1;
+	if (snake.saved.num > 6) {
+		// var t = snake.leftTile();
+		var t = snake.rightTile();
+		console.log(t.cdir);
+		snake.saved.num = 1;
+		return t.cdir;
+	}
+	var t = snake.forwardTile();
+	console.log("DIRECTION:", t.cdir);
+	return t.cdir;
+	// return "?";
+}
+
 var bots = [
 	// {"name": "Westy", "move": function(){ return this.head.col - this.head.next.col == 1 ? "n" : "w" }},
 	// {"name": "Northy", "move": function(){ return "n" }},
 	// {"name": "Southy", "move": function(){ return "s" }},
-	// {"name": "Easty", "move": function(){ return "e" }},
-	{"name": "random_snake", "move": random_snake},
-	{"name": "greedy_snake", "move": greedy_snake},
-	{"name": "Diagonal", "move": diagonal},
-	{"name": "The spiraling snake will make you go insane (everyone wants to see that groovy thing)", "move": spiral},
+	{"name": "RightSometimes", "move": cool_snake, },
+	{"name": "RightOthertimes", "move": cool_snake, },
+	// {"name": "random_snake", "move": random_snake},
+	// {"name": "SnakeCamelA", "move": snake_camel_case}, {"name": "SnakeCamelB", "move": snake_camel_case}, {"name": "SnakeCamelC", "move": snake_camel_case}, {"name": "SnakeCamelD", "move": snake_camel_case}, {"name": "SnakeCamelE", "move": snake_camel_case}, {"name": "SnakeCamelF", "move": snake_camel_case}, {"name": "SnakeCamelG", "move": snake_camel_case}, {"name": "SnakeCamelH", "move": snake_camel_case}, // {"name": "Diagonal", "move": diagonal}, // {"name": "greedy_snakeA", "move": greedy_snake},
+	// {"name": "greedy_snakeB", "move": greedy_snake},
+	// {"name": "greedy_snakeDC", "move": greedy_snake},
+	// {"name": "greedy_snakeE", "move": greedy_snake},
+	// {"name": "The spiraling snake will make you go insane (everyone wants to see that groovy thing)", "move": spiral},
 	// {"name": "Don't spend the rest of your life wondering", "move": spiral},
 	// {"name": "Putting all reason aside you decide to exchange what you've got for something hypnotic and strange", "move": spiral},
 	// {"name": "Now that you've tried it you're back to deny it, the spiraling snake is a fraud and a fake", "move": spiral},
-	{"name": "apple_turnover", "move": apple_turnover}
+	// {"name": "apple_turnover", "move": apple_turnover}
 ]
 
 snakes(bots, keep_log=true)
