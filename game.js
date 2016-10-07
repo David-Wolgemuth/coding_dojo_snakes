@@ -1,233 +1,209 @@
-var fs = require("fs")
-var Snake = require("./snake.js")
 
-function shuffle(arr){
-	// JS implementation of the Durstenfeld shuffle by StackOverflow user Laurens Holst
-	// http://stackoverflow.com/a/12646864/5749040
+var fs = require("fs");
+var Snake = require("./snake.js");
+var _u = require("./utilities")();
 
-	for(var i = arr.length-1; i>0; i--){
-		var j = Math.floor(Math.random()*(i+1))
-		var temp = arr[i]
-		arr[i] = arr[j]
-		arr[j] = temp
-	}
-}
+function SnakeGame (bots, keepLog)
+{
+	this.bots = bots;
+	this.startingLength = 3;
+	this.gridSize = this.bots.length*10
+	this.numberOfApples = Math.pow(this.gridSize,2)/4
+	this.maxTurns = 500;
+	this.keepLog = keepLog;
+	this.scores = {};
+	this.snakes = []
 
-function mod(a,b){
-	// Make % work for negative numbers
-	return ( (a%b) + b) % b
-}
+	this.run = function () {
 
-function copy(obj){
-	// Kludgy function to deep copy an array or object (so that any sub-arrays/objects will be copies, not references to the original)
-	// This will break if the object holds any non-JSONible data (functions, undefined, and such), but that shouldn't be an issue for this project
-	return JSON.parse(JSON.stringify(obj))
-}
-
-function empty_grid(size, f){
-	if(!f){ f = "." }
-
-	var new_grid = new Array(size)
-	
-	for(var i = 0; i < new_grid.length; i++){
-		new_grid[i] = new Array(size).fill(f)
-	}
-
-	return new_grid
-}
-
-function snakes(bots, keep_log){
-	function make_map(snake){
-		var map = empty_grid(bots.length*10, "?")
-
-		var view_span = snake.length
-
-		for(var i = -view_span; i <= view_span; i++){
-			for(var j = -view_span; j <= view_span; j++){
-				cell_row = mod(snake.head.row+i, map.length)
-				cell_col = mod(snake.head.col+j, map[cell_row].length)
-				map[cell_row][cell_col] = grid[cell_row][cell_col]
-			}
+		if(this.keepLog){
+			log = []
 		}
 
-		return map
-	}
+		this.grid = _u.emptyGrid(this.gridSize, ".")
 
-	function find_empty_cell(){
-		row = Math.floor(Math.random()*GRID_SIZE)
-		col = Math.floor(Math.random()*GRID_SIZE)
-
-		while(grid[row][col] != "."){
-			row = Math.floor(Math.random()*GRID_SIZE)
-			col = Math.floor(Math.random()*GRID_SIZE)
+		var moves = {
+			"n": [-1,0],
+			"e": [0,1],
+			"s": [1,0],
+			"w": [0,-1],
 		}
 
-		return [row, col]
-	}
+		_u.shuffleArray(this.bots)
 
-	function kill_snake(snake){
-		var runner = snake.head
-		while(runner){
-			grid[runner.row][runner.col] = snake.letter.toUpperCase()
-			runner = runner.next
-		}
-		snake_index = snakes.indexOf(snake)
-		if(snake_index > -1){
-			snakes.splice(snake_index, 1)
-		}
-	}
+		// Make and place snakes
 
-	function move_to_cell(snake, row, col){
-		var new_cell = grid[row][col]
 
-		if(new_cell !== "*" && new_cell !== ".") {
-			kill_snake(snake)
-		} else {
-			grid[snake.head.row][snake.head.col] = snake.letter
-			snake.add_head(row, col)
-			grid[snake.head.row][snake.head.col] = snake.letter.toUpperCase()
+		for (var i = 0; i < this.bots.length; i++) {
+			var new_snake = new Snake(this.bots[i].move, String.fromCharCode(97+i))
+			new_snake.name = this.bots[i].name
+			new_snake.timeout = 0
+			new_snake.score = 0
 
-			if(new_cell==".") {
-				grid[snake.tail.row][snake.tail.col] = "."
-				snake.remove_tail()
-			} else {
-				APPLES--
-				snake.score++
-				scores[snake.name+" "+snake.letter] = snake.score
-			}
+			var start = i*10+4
 
-			snakes[i].timeout = snakes[i].length
-		}
-	}
+			for (var j = 0; j < this.startingLength; j++) {
+				new_snake.add_head(start, start+j)
+				this.grid[start][start+j] = new_snake.letter
+			};
 
-	function default_move(snake){
-		// looks at snake.head and snake.head.next to determine what direction the snake is moving in, then moves that direction again
+			this.grid[new_snake.head.row][new_snake.head.col] = new_snake.letter.toUpperCase()
 
-		row_diff = snake.head.row - snake.head.next.row
-		col_diff = snake.head.col - snake.head.next.col
-
-		next = [mod(snake.head.row + row_diff, GRID_SIZE), mod(snake.head.col + col_diff, GRID_SIZE)]
-
-		return next
-	}
-
-	function find_new_cell(snake, deltas){
-		if(!deltas){
-			return default_move(snake)
-		}
-
-		next = [mod(snake.head.row + deltas[0], GRID_SIZE), mod(snake.head.col + deltas[1], GRID_SIZE)]
-
-		if(next[0]==snake.head.next.row && next[1]==snake.head.next.col){
-			return default_move(snake)
-		} else {
-			return next
-		}
-	}
-
-	STARTING_LENGTH = 3
-	GRID_SIZE = bots.length*10
-	APPLES = Math.pow(GRID_SIZE,2)/4
-
-	if(keep_log){
-		log = []
-	}
-
-	var grid = empty_grid(GRID_SIZE, ".")
-	
-	var moves = {
-		"n": [-1,0],
-		"e": [0,1],
-		"s": [1,0],
-		"w": [0,-1],
-	}
-
-	shuffle(bots)
-
-	// Make and place snakes
-
-	var snakes = []
-	var scores = {}
-
-	for (var i = 0; i < bots.length; i++) {
-		var new_snake = new Snake(bots[i].move, String.fromCharCode(97+i))
-		new_snake.name = bots[i].name
-		new_snake.timeout = 0
-		new_snake.score = 0
-
-		var start = i*10+4
-
-		for (var j = 0; j < STARTING_LENGTH; j++) {
-			new_snake.add_head(start, start+j)
-			grid[start][start+j] = new_snake.letter
+			this.snakes.push(new_snake)
+			this.scores[new_snake.name+" "+new_snake.letter] = this.snakes[this.snakes.length-1].score;
 		};
 
-		grid[new_snake.head.row][new_snake.head.col] = new_snake.letter.toUpperCase()
+		// Place starting apples
 
-		snakes.push(new_snake)
-		scores[new_snake.name+" "+new_snake.letter] = snakes[snakes.length-1].score
+		for(var i = 0; i < this.numberOfApples; i++){
+			var empty = this.findEmptyCell()
+			this.grid[empty[0]][empty[1]] = "*"
+		}
+
+		if(this.keepLog){
+			log.push({grid: _u.shallowCopy(this.grid), scores: _u.shallowCopy(this.scores) });
+		}
+
+
+		while(this.snakes && this.maxTurns && this.numberOfApples){
+			this.maxTurns--
+
+			for (var i = 0; i < this.snakes.length; i++) {
+				if(this.snakes[i].timeout){ 
+					this.snakes[i].timeout-- 
+				} else {			
+					var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
+					next = this.findNewCell(this.snakes[i], moves[move])
+					this.moveToCell(this.snakes[i], next[0], next[1])
+
+					if(this.keepLog){
+						log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
+					}
+				}
+			};
+		}
+
+		if(this.keepLog){
+			var output = "var log = " + JSON.stringify(log, null, "\t")
+			fs.writeFile("log.js", output, function(err){
+				if(err){ console.log("Error while saving", err)}
+			});
+		}
 	};
 
-	// Place starting apples
+	this.makeMap = function snake_game_makeMap (snake)
+	{
+		var map = _u.emptyGrid(this.bots.length*10, "?");
 
-	for(var i = 0; i < APPLES; i++){
-		var empty = find_empty_cell()
-		grid[empty[0]][empty[1]] = "*"
-	}
+		var view_span = snake.length;
 
-	if(keep_log){
-		log.push({"grid": copy(grid), "scores": copy(scores)})
-	}
-
-	MAX_TURNS = 500
-
-	while(snakes && MAX_TURNS && APPLES){
-		MAX_TURNS--
-
-		for (var i = 0; i < snakes.length; i++) {
-			if(snakes[i].timeout){ 
-				snakes[i].timeout-- 
-			} else {			
-				var move = snakes[i].move(make_map(snakes[i])).toLowerCase()
-				next = find_new_cell(snakes[i], moves[move])
-				move_to_cell(snakes[i], next[0], next[1])
-
-				if(keep_log){
-					log.push({"grid": copy(grid), "scores": copy(scores)})
-				}
+		for(var i = -view_span; i <= view_span; i++){
+			for (var j = -view_span; j <= view_span; j++) {
+				cell_row = _u.mod(snake.head.row+i, map.length);
+				cell_col = _u.mod(snake.head.col+j, map[cell_row].length);
+				map[cell_row][cell_col] = this.grid[cell_row][cell_col];
 			}
-		};
-	}
+		}
 
-	if(keep_log){
-		var output = "var log = " + JSON.stringify(log, null, "\t")
-		fs.writeFile("log.js", output, function(err){
-			if(err){ console.log("Error while saving", err)}
-		})
-	}
+		return map;
+	};
 
-	return scores
+	this.findEmptyCell = function snakeGameFindEmptyCell ()
+	{
+		row = Math.floor(Math.random()*this.gridSize);
+		col = Math.floor(Math.random()*this.gridSize);
 
-}
+		while (this.grid[row][col] != ".") {
+			row = Math.floor(Math.random()*this.gridSize);
+			col = Math.floor(Math.random()*this.gridSize);
+		}
 
-function play_many_games(bots, number_of_games){
-	if(!number_of_games){ number_of_games = 100 }
-	
-	running_totals = {}
+		return [row, col];
+	};
 
-	for(var i = 0; i < bots.length; i++){
-		running_totals[bots[i].name] = 0
-	}
+	this.killSnake = function snakeGameKillSnake (snake)
+	{
+		var runner = snake.head;
+		while (runner) {
+			this.grid[runner.row][runner.col] = snake.letter.toUpperCase();
+			runner = runner.next;
+		}
+		snake_index = this.snakes.indexOf(snake);
+		if (snake_index > -1) {
+			this.snakes.splice(snake_index, 1);
+		}
+	};
 
-	for(var games = 0; games < 100; games++){
-		var scores = snakes(bots)
-		for(var bot in scores){
-			running_totals[bot.slice(0,-2)] += scores[bot]
+	this.moveToCell = function snakeGameMoveToCell (snake, row, col)
+	{
+		var newCell = this.grid[row][col];
+
+		if (newCell !== "*" && newCell !== ".") {
+			this.killSnake(snake);
+		} else {
+			this.grid[snake.head.row][snake.head.col] = snake.letter;
+			snake.add_head(row, col);
+			this.grid[snake.head.row][snake.head.col] = snake.letter.toUpperCase();
+
+			if(newCell==".") {
+				this.grid[snake.tail.row][snake.tail.col] = ".";
+				snake.remove_tail();
+			} else {
+				this.numberOfApples--;
+				this.scores[snake.name+" "+snake.letter] = snake.score;
+			}
+
+			snake.score++;
+			// this.snakes[i].timeout = this.snakes[i].length;
 		}
 	}
 
-	return running_totals
+	this.getDefaultMove = function snakeGameGetDefaultMove (snake)
+	{
+		row_diff = snake.head.row - snake.head.next.row;
+		col_diff = snake.head.col - snake.head.next.col;
+
+		next = [_u.mod(snake.head.row + row_diff, this.gridSize), _u.mod(snake.head.col + col_diff, this.gridSize)]
+
+		return next;
+	};
+
+	this.findNewCell = function snakeGameFindNewCell (snake, deltas)
+	{
+		if(!deltas){
+			return this.getDefaultMove(snake);
+		}
+
+		next = [_u.mod(snake.head.row + deltas[0], this.gridSize), _u.mod(snake.head.col + deltas[1], this.gridSize)];
+
+		if (next[0] === snake.head.next.row && next[1] === snake.head.next.col) {
+			// snake.reverse();
+			return this.getDefaultMove(snake);
+		} else {
+			return next;
+		}
+	};
+
 }
+
+// function play_many_games(number_of_games){
+// 	if(!number_of_games){ number_of_games = 100 }
+	
+// 	running_totals = {}
+
+// 	for(var i = 0; i < this.bots.length; i++){
+// 		running_totals[this.bots[i].name] = 0
+// 	}
+
+// 	for(var games = 0; games < 100; games++){
+// 		var scores = snakes(this.bots)
+// 		for(var bot in scores){
+// 			running_totals[bot.slice(0,-2)] += scores[bot]
+// 		}
+// 	}
+
+// 	return running_totals
+// }
 
 // Bots go here
 function random_snake(){
@@ -235,13 +211,13 @@ function random_snake(){
 }
 
 function greedy_snake(map){
-	if(map[mod(this.head.row-1, map.length)][this.head.col]=="*"){
+	if(map[_u.mod(this.head.row-1, map.length)][this.head.col]=="*"){
 		return "n"
-	} else if(map[mod(this.head.row+1, map.length)][this.head.col]=="*") {
+	} else if(map[_u.mod(this.head.row+1, map.length)][this.head.col]=="*") {
 		return "s"
-	} else if(map[this.head.row][mod(this.head.col-1, map.length)]=="*") {
+	} else if(map[this.head.row][_u.mod(this.head.col-1, map.length)]=="*") {
 		return "w"
-	} else if(map[this.head.row][mod(this.head.col+1, map.length)]=="*") {
+	} else if(map[this.head.row][_u.mod(this.head.col+1, map.length)]=="*") {
 		return "e"
 	} else {
 		return "?"
@@ -283,100 +259,24 @@ function apple_turnover(){
 	return dirs[this.score % 4]
 }
 
-function snake_camel_case (map)
-{
-	var c = this.head.col;
-	var r = this.head.row;
 
-	var cc = this.head.next.col;
-	var rr = this.head.next.row;
-
-	var next = map[mod(r+(r-rr), map.length)][mod(c+(c-cc), map.length)];
-
-	function either (x, y) {
-		return (Math.random() < 0.5) ? x : y;	
-	}
-
-	function at (d) {
-		switch (d) {
-			case "n":
-				return map[mod(r-1, map.length)][c];
-			case "s":
-				return map[mod(r+1, map.length)][c];
-			case "e":
-				return map[r][mod(c+1, map.length)];
-			case "w":
-				return map[r][mod(c-1, map.length)];
-		}
-		return null;
-	}
-	// console.log(next);	
-	switch (next) {
-		case "*":
-			return "?";
-		case ".":
-			break;
-		default:
-			var dirs = ["n", "s", "e", "w"];
-			for (var i = 0; i < dirs.length; i++) {
-				if (at(dirs[i]) === "*" || at(dirs[i]) === ".") {
-					return dirs[i];
-				}
-			}
-	}
-
-	switch (map[r][mod(c-1, map.length)]) {
-		case "*":
-			return "w";
-		case ".":
-			break;
-		case this.letter:
-			break;
-		default:
-			return either("n", "s");
-	}
-	switch (map[r][mod(c+1, map.length)]) {
-		case "*":
-			return "e";
-		case ".":
-			break;
-		case this.letter:
-			break;
-		default:
-			return either("n", "s");
-	}
-	switch (map[mod(r-1, map.length)][c]) {
-		case "*":
-			return "n";
-		case ".":
-			break;
-		case this.letter:
-			break;
-		default:
-			return either("e", "w");
-	}
-	switch (map[mod(r+1, map.length)][c]) {
-		case "*":
-			return "n";
-		case ".":
-			break;
-		case this.letter:
-			break;
-		default:
-			return either("e", "w");
-	}
-	return "?";
-}
 function cool_snake (map, snake) {
 	// console.log(snake);
-	snake.saved.num = snake.saved.num ? snake.saved.num + 1 : 1;
-	if (snake.saved.num > 6) {
+	// snake.saved.num = snake.saved.num ? snake.saved.num + 1 : 1;
+	// if (snake.saved.num > 60) {
 		// var t = snake.leftTile();
-		var t = snake.rightTile();
-		console.log(t.cdir);
-		snake.saved.num = 1;
+		// snake.saved.reversed = true;
+	// if (!snake.saved.reversed) {
+		// console.log("\n\nREVERSING\n\n")
+		var t = snake.backTile();
+		// console.log(t.cdir);
+		// snake.saved.num = 1;
+		snake.saved.reversed = true;
 		return t.cdir;
-	}
+	// }
+	// console.log(this);
+	// console.log(this.is_valid());
+	// throw "STOP";
 	var t = snake.forwardTile();
 	console.log("DIRECTION:", t.cdir);
 	return t.cdir;
@@ -387,13 +287,13 @@ var bots = [
 	// {"name": "Westy", "move": function(){ return this.head.col - this.head.next.col == 1 ? "n" : "w" }},
 	// {"name": "Northy", "move": function(){ return "n" }},
 	// {"name": "Southy", "move": function(){ return "s" }},
-	{"name": "RightSometimes", "move": cool_snake, },
+	// {"name": "RightSometimes", "move": cool_snake, },
 	{"name": "RightOthertimes", "move": cool_snake, },
 	// {"name": "random_snake", "move": random_snake},
 	// {"name": "SnakeCamelA", "move": snake_camel_case}, {"name": "SnakeCamelB", "move": snake_camel_case}, {"name": "SnakeCamelC", "move": snake_camel_case}, {"name": "SnakeCamelD", "move": snake_camel_case}, {"name": "SnakeCamelE", "move": snake_camel_case}, {"name": "SnakeCamelF", "move": snake_camel_case}, {"name": "SnakeCamelG", "move": snake_camel_case}, {"name": "SnakeCamelH", "move": snake_camel_case}, // {"name": "Diagonal", "move": diagonal}, // {"name": "greedy_snakeA", "move": greedy_snake},
 	// {"name": "greedy_snakeB", "move": greedy_snake},
 	// {"name": "greedy_snakeDC", "move": greedy_snake},
-	// {"name": "greedy_snakeE", "move": greedy_snake},
+	{"name": "greedy_snakeE", "move": greedy_snake},
 	// {"name": "The spiraling snake will make you go insane (everyone wants to see that groovy thing)", "move": spiral},
 	// {"name": "Don't spend the rest of your life wondering", "move": spiral},
 	// {"name": "Putting all reason aside you decide to exchange what you've got for something hypnotic and strange", "move": spiral},
@@ -401,7 +301,8 @@ var bots = [
 	// {"name": "apple_turnover", "move": apple_turnover}
 ]
 
-snakes(bots, keep_log=true)
+var game = new SnakeGame(bots, this.keepLog=true)
+game.run();
 
 // console.log(play_many_games(bots))
 

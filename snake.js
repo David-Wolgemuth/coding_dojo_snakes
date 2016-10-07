@@ -7,7 +7,7 @@ module.exports = function Snake(move_function, letter){
 	this.direction = 1;
 	this.move = function (map) {
 		var snake = new UserSnake(this, map);
-		return move_function(map, snake);
+		return move_function.call(this, map, snake);
 	};
 
 	this.letter = letter
@@ -42,6 +42,47 @@ module.exports = function Snake(move_function, letter){
 		}
 
 		return this
+	}
+
+	this.reverse = function () {
+		var listString = ""
+		for (var curr = this.head; curr; curr = curr.next) {
+			listString += "(" + curr.row + ", " + curr.col + ")";
+		}
+		// console.log(listString, " ----- ");
+
+		// console.log(this.head.coords());
+
+		if (!this.head) { return; }
+
+		var curr = this.head;
+		var prev = this.head.next;
+
+		while (curr) {
+			// console.log("CHANGING:")
+			// console.log("CURR:", curr.coords());
+			var next = curr.next;
+
+			curr.next = prev;
+			curr.prev = next;
+
+			prev = curr;
+			curr = next;
+		}
+
+		var head = this.head;
+		this.head = prev;
+		this.tail = head;
+		this.tail.next = null;
+
+		var listString = ""
+		for (var curr = this.head; curr; curr = curr.next) {
+			listString += "(" + curr.row + ", " + curr.col + ")";
+		}
+		// console.log(listString);
+		// console.log("HEAD:", this.head);
+		// console.log("TAIL:", this.tail);
+		// throw "FUCK YOU EVERYONE";
 	}
 
 	this.remove_head = function(){
@@ -202,5 +243,5 @@ function SnakeNode(row, col){
 	this.prev = null
 }
 SnakeNode.prototype.coords = function () {
-	return { row: row, col: col };
+	return { row: this.row, col: this.col };
 }
