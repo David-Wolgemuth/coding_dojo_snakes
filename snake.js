@@ -1,8 +1,8 @@
-module.exports = function Snake(move_function, letter){
+module.exports = function Snake (move_function, letter) {
 	// Snake implemented as a doubly-linked list for easily adding a new head and removing the tail
-	this.head = null
-	this.tail = null
-	this.length = 0
+	this.head = null;
+	this.tail = null;
+	this.length = 0;
 	this.saved = {};
 	this.direction = 1;
 	this.move = function (map) {
@@ -10,57 +10,47 @@ module.exports = function Snake(move_function, letter){
 		return move_function.call(this, map, snake);
 	};
 
-	this.letter = letter
+	this.letter = letter;
 
-	this.add_head = function(row, col){
-		this.length++
+	this.addHead = function (row, col) {
+		this.length += 1;
 
-		if(!this.head){
-			this.head = new SnakeNode(row, col)
-			this.tail = this.head
+		if (!this.head) {
+			this.head = new SnakeNode(row, col);
+			this.tail = this.head;
 		} else {
-			var new_head = new SnakeNode(row, col)
-			this.head.prev = new_head
-			new_head.next = this.head 
-			this.head = new_head
+			var new_head = new SnakeNode(row, col);
+			this.head.prev = new_head;
+			new_head.next = this.head;
+			this.head = new_head;
 		}
 
-		return this
-	}
+		return this;
+	};
 
-	this.add_tail = function(row, col){
-		this.length++
+	this.addTail = function (row, col) {
+		this.length++;
 
-		if(!this.tail){
-			this.tail = new SnakeNode(row, col)
-			this.head = this.tail
+		if (!this.tail) {
+			this.tail = new SnakeNode(row, col);
+			this.head = this.tail;
 		} else {
-			var new_tail = new SnakeNode(row, col)
-			this.tail.next = new_tail
-			new_tail.prev = this.tail
-			this.tail = new_tail
+			var new_tail = new SnakeNode(row, col);
+			this.tail.next = new_tail;
+			new_tail.prev = this.tail;
+			this.tail = new_tail;
 		}
 
-		return this
-	}
+		return this;
+	};
 
 	this.reverse = function () {
-		var listString = ""
-		for (var curr = this.head; curr; curr = curr.next) {
-			listString += "(" + curr.row + ", " + curr.col + ")";
-		}
-		// console.log(listString, " ----- ");
-
-		// console.log(this.head.coords());
-
 		if (!this.head) { return; }
 
 		var curr = this.head;
 		var prev = this.head.next;
 
 		while (curr) {
-			// console.log("CHANGING:")
-			// console.log("CURR:", curr.coords());
 			var next = curr.next;
 
 			curr.next = prev;
@@ -74,21 +64,14 @@ module.exports = function Snake(move_function, letter){
 		this.head = prev;
 		this.tail = head;
 		this.tail.next = null;
+	};
 
-		var listString = ""
-		for (var curr = this.head; curr; curr = curr.next) {
-			listString += "(" + curr.row + ", " + curr.col + ")";
+	this.removeHead = function () {
+		if (!this.head) {
+			return this;
 		}
-		// console.log(listString);
-		// console.log("HEAD:", this.head);
-		// console.log("TAIL:", this.tail);
-		// throw "FUCK YOU EVERYONE";
-	}
 
-	this.remove_head = function(){
-		if(!this.head){ return this }
-
-		this.length--
+		this.length -= 1;
 		this.head = this.head.next
 
 		if(this.head){
@@ -98,7 +81,7 @@ module.exports = function Snake(move_function, letter){
 		return this
 	}
 
-	this.remove_tail = function(){
+	this.removeTail = function(){
 		if(!this.tail){ return this }
 
 		this.length--

@@ -4,32 +4,10 @@
 		<title>Watch Replay</title>
 		<link rel="stylesheet" type="text/css" href="replay.css">
 		<script type="text/javascript" src="angular.js"></script>
-		<script type="text/javascript" src="log.js"></script>
-		<script type="text/javascript">
-			var TIMER_INTERVAL = 62
-
-			var myAppModule = angular.module("myApp", [])
-			myAppModule.controller("snakeController", function($scope, $interval){
-				$scope.frame = -1
-
-				function changeGrid(){
-					$scope.frame++
-
-					if($scope.frame == log.length){
-						$interval.cancel(timer)
-					} else {
-						$scope.curr_frame = log[$scope.frame]
-					}
-
-				}
-
-				timer = $interval(changeGrid, TIMER_INTERVAL)
-
-				$scope.$on("$destroy", function(){
-					$interval.cancel(timer)
-				})
-			})
-		</script>
+		<!-- <script type="text/javascript" src="log.js"></script> -->
+		<script type="text/javascript" src="bots.js"></script>
+		<script type="text/javascript" src="bundle.js"></script>
+		<!-- <script type="text/javascript" src="angular-app.js"></script> -->
 	</head>
 	<body>
 		<div ng-controller="snakeController">
