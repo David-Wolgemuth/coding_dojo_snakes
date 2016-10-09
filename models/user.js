@@ -6,7 +6,13 @@ var UserSchema = new mongoose.Schema({
     email: { 
         type: String,
         required: false,
+        index: { unique: true },
         validate: [validate.email, "Invalid Email Address"]
+    },
+    username: {
+        type: String,
+        required: true,
+        index: { unique: true }
     },
     // password: bcrypt
     snakes: [{ 

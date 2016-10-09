@@ -8,23 +8,18 @@ module.exports = function SnakeGame (bots)
 	this.bots = bots;
 	this.startingLength = 3;
 	this.gridSize = this.bots.length*10
-	this.numberOfApples = Math.pow(this.gridSize,2)/4
-	this.maxTurns = 500;
+	this.numberOfApples = Math.pow(this.gridSize,2)/4;
+	this.maxTurns = 50;
 	// this.keepLog = keepLog;
 	this.scores = {};
 	this.snakes = [];
 	this.log = [];
 
-	this.run = function () {
+	this.setup = function () {
 
 		this.grid = _u.emptyGrid(this.gridSize, ".");
 
-		var moves = {
-			"n": [-1,  0],
-			"e": [ 0,  1],
-			"s": [ 1,  0],
-			"w": [ 0, -1]
-		};
+		
 
 		this.addSnakes();
 
@@ -35,32 +30,44 @@ module.exports = function SnakeGame (bots)
 			this.grid[empty[0]][empty[1]] = "*";
 		}
 
-		this.log.push({grid: _u.shallowCopy(this.grid), scores: _u.shallowCopy(this.scores) });
-
-		while (this.snakes && this.maxTurns && this.numberOfApples) {
-			this.maxTurns -= 1;
-
-			if (this.maxTurns % 24 === 0) {
-				console.log(Math.floor((500-this.maxTurns) / 5), "%");
-			}
-
-			for (var i = 0; i < this.snakes.length; i++) {
-				if (this.snakes[i].timeout) { 
-					this.snakes[i].timeout -= 1;
-				} else {			
-					var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
-					next = this.findNewCell(this.snakes[i], moves[move])
-					this.moveToCell(this.snakes[i], next[0], next[1])
-
-					this.log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
-				}
-			}
-		}
-
-		if(this.keepLog){
-			this.writeLog();
-		}
+		this.log.push({
+			grid: _u.shallowCopy(this.grid), 
+			scores: _u.shallowCopy(this.scores) 
+		});
 	};
+
+	this.runFrame = function snakeGameRunFrame () {
+		if (!(this.snakes && this.maxTurns && this.numberOfApples)) {
+			return false;
+		}
+		this.maxTurns -= 1;
+
+		// if (this.maxTurns % 24 === 0) {
+		// 	var percent = Math.floor((500-this.maxTurns) / 5);
+		// 	loaded(percent);
+		// }
+
+		var moves = {
+			"n": [-1,  0],
+			"e": [ 0,  1],
+			"s": [ 1,  0],
+			"w": [ 0, -1]
+		};
+
+		for (var i = 0; i < this.snakes.length; i++) {
+			if (this.snakes[i].timeout) { 
+				this.snakes[i].timeout -= 1;
+			} else {			
+				var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
+				next = this.findNewCell(this.snakes[i], moves[move])
+				this.moveToCell(this.snakes[i], next[0], next[1])
+
+				this.log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
+			}
+		}	
+
+		return true;
+	}
 
 	this.addSnakes = function snakeGameAddSnakes () {
 		_u.shuffleArray(this.bots);
@@ -84,6 +91,10 @@ module.exports = function SnakeGame (bots)
 			this.scores[newSnake.name+" "+newSnake.letter] = this.snakes[this.snakes.length-1].score;
 		};
 	};
+
+	this.lastFrame = function snakeGameLastFrame () {
+		return this.log[this.log.length - 1];
+	}
 
 	this.writeLog = function snakeGameWriteLog () {
 		var output = "var log = " + JSON.stringify(log, null, "\t")

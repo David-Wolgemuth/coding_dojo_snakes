@@ -1,0 +1,19 @@
+
+<div ng-controller="editorController">
+	<link rel="stylesheet" ng-href="codemirror/theme/{{ editorOptions.theme }}.css">
+
+	<form class="form-inline">
+		<label>Color Theme:</label>
+		<select ng-model="editorOptions.theme" class="form-control" ng-change="setColorTheme(editorOptions.theme)"> <option ng-repeat="colorTheme in colorThemes" val="colorTheme">{{ colorTheme }}</option> </select>
+
+		<label for="sublime">Sublime:</label>
+		<input type="radio" id="sublime" ng-model="editorOptions.keyMap" value="sublime">
+		<label for="vim">Vim:</label>
+		<input type="radio" id="vim" ng-model="editorOptions.keyMap" value="vim">
+	</form>
+
+	<ui-codemirror ng-model="snakeCode.text" ui-codemirror-opts="editorOptions"></ui-codemirror>
+
+	<button class="btn btn-default" ng-click="testSnake(snakeCode.text)">Run Snake in Test Arena</button>
+
+</div>

@@ -2,35 +2,37 @@
   "name": "coding_dojo_snakes",
   "version": "1.0.0",
   "description": "The goal of this challenge is to write a bot that will play the Snake computer game competitively against other bots.",
-  "main": "angular-app.js",
+  "main": "server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/madjaqk/coding_dojo_snakes.git"
   },
   "scripts": {
-    "compile": "./node_modules/.bin/browserify client/scripts/index.js > client/script.js"
+    "browserify": "./node_modules/.bin/browserify client/scripts/index.js > client/script.js",
+    "watchify": "./node_modules/.bin/watchify client/scripts/index.js -o client/script.js",
+    "start": "./node_modules/.bin/nodemon server.js"
   },
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/madjaqk/coding_dojo_snakes/issues"
   },
-  "bin": {
-    "browserify": "./node_modules/.bin/browserify",
-    "uglify": "./node_modules/.bin/uglify"
-  },
   "homepage": "https://github.com/madjaqk/coding_dojo_snakes#readme",
   "dependencies": {
     "angular": "^1.5.8",
     "angular-route": "^1.5.8",
+    "angular-ui-codemirror": "^0.3.0",
     "babelify": "^7.3.0",
     "body-parser": "^1.15.2",
+    "bootstrap": "^3.3.7",
     "browserify": "^13.1.0",
+    "codemirror": "^5.19.0",
     "connect-mongo": "^1.3.2",
     "express": "^4.14.0",
     "express-session": "^1.14.1",
     "mongoose": "^4.6.3",
     "mongoose-bcrypt": "^1.4.2",
     "mongoose-validate": "0.0.5",
-    "uglify-js": "^2.7.3"
+    "vm-browserify": "0.0.4",
+    "watchify": "^3.7.0"
   }
 }

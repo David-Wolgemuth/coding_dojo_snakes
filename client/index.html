@@ -3,13 +3,31 @@
 	<head>
 		<title>Watch Replay</title>
 		<link rel="stylesheet" type="text/css" href="styles/replay.css">
-		<!-- <script type="text/javascript" src="angular.js"></script> -->
-		<!-- <script type="text/javascript" src="log.js"></script> -->
+		<link rel="stylesheet" type="text/css" href="styles/bootstrap.css">
 		<script type="text/javascript" src="../bots.js"></script>
 		<script type="text/javascript" src="script.js"></script>
-		<!-- <script type="text/javascript" src="angular-app.js"></script> -->
+
+
+		<link rel="stylesheet" type="text/css" href="codemirror/lib/codemirror.css">
+		<script type="text/javascript" src="codemirror/lib/codemirror.js"></script>
+		<script type="text/javascript" src="codemirror/mode/javascript/javascript.js"></script>
+
+		<script type="text/javascript" src="codemirror/keymap/vim.js"></script>
+		<script type="text/javascript" src="codemirror/keymap/sublime.js"></script>
+		<script src="codemirror/addon/edit/matchbrackets.js"></script>
+
 	</head>
-	<body>
-		<div ng-view=""></div>
+	<body ng-controller="masterController">
+		<div class="container">
+			<nav>
+				<ul class="nav nav-tabs">
+					<li role="presentation" ng-class="(currentTab == 'snakes') ? 'active' : '' "><a href ng-click="goToTab('snakes')">Snakes</a></li>
+					<li role="presentation" ng-class="(currentTab == 'arena') ? 'active' : '' "><a href ng-click="goToTab('arena')">Arena</a></li>
+					<li role="presentation" ng-class="(currentTab == 'editor') ? 'active' : '' "><a href ng-click="goToTab('editor')">Editor</a></li>
+					<li role="presentation" ng-class="(currentTab == 'docs') ? 'active' : '' "><a href ng-click="goToTab('docs')">Docs</a></li>
+				</ul>
+			</nav>
+			<div ng-view=""></div>
+		</div>
 	</body>
 </html>

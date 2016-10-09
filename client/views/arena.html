@@ -1,5 +1,6 @@
-<div ng-controller="snakeController">
-	<p>{{ frame }}</p>
+<div ng-controller="arenaController">
+	<h3>Arena</h3>
+	<p>Visit <a href="#/snakes">Snakes Page</a> to create new match.</p>
 	<div class="outer">
 		<div class="grid">
 			<div ng-repeat="row in curr_frame.grid track by $index" class="row">
@@ -8,6 +9,6 @@
 		</div>
 	</div>
 	<div class="outer">
-		<p ng-repeat="(player, score) in curr_frame.scores" class="{{player.slice(-1)}}">{{player}}: {{score}} </p>
+		<p ng-repeat="(player, score) in curr_frame.scores" class="{{ player.slice(-1) }}">{{ player }}: {{ score }} </p>
 	</div>
 </div>

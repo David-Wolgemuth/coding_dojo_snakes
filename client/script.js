@@ -9,23 +9,18 @@ module.exports = function SnakeGame (bots)
 	this.bots = bots;
 	this.startingLength = 3;
 	this.gridSize = this.bots.length*10
-	this.numberOfApples = Math.pow(this.gridSize,2)/4
-	this.maxTurns = 500;
+	this.numberOfApples = Math.pow(this.gridSize,2)/4;
+	this.maxTurns = 50;
 	// this.keepLog = keepLog;
 	this.scores = {};
 	this.snakes = [];
 	this.log = [];
 
-	this.run = function () {
+	this.setup = function () {
 
 		this.grid = _u.emptyGrid(this.gridSize, ".");
 
-		var moves = {
-			"n": [-1,  0],
-			"e": [ 0,  1],
-			"s": [ 1,  0],
-			"w": [ 0, -1]
-		};
+		
 
 		this.addSnakes();
 
@@ -36,32 +31,44 @@ module.exports = function SnakeGame (bots)
 			this.grid[empty[0]][empty[1]] = "*";
 		}
 
-		this.log.push({grid: _u.shallowCopy(this.grid), scores: _u.shallowCopy(this.scores) });
-
-		while (this.snakes && this.maxTurns && this.numberOfApples) {
-			this.maxTurns -= 1;
-
-			if (this.maxTurns % 24 === 0) {
-				console.log(Math.floor((500-this.maxTurns) / 5), "%");
-			}
-
-			for (var i = 0; i < this.snakes.length; i++) {
-				if (this.snakes[i].timeout) { 
-					this.snakes[i].timeout -= 1;
-				} else {			
-					var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
-					next = this.findNewCell(this.snakes[i], moves[move])
-					this.moveToCell(this.snakes[i], next[0], next[1])
-
-					this.log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
-				}
-			}
-		}
-
-		if(this.keepLog){
-			this.writeLog();
-		}
+		this.log.push({
+			grid: _u.shallowCopy(this.grid), 
+			scores: _u.shallowCopy(this.scores) 
+		});
 	};
+
+	this.runFrame = function snakeGameRunFrame () {
+		if (!(this.snakes && this.maxTurns && this.numberOfApples)) {
+			return false;
+		}
+		this.maxTurns -= 1;
+
+		// if (this.maxTurns % 24 === 0) {
+		// 	var percent = Math.floor((500-this.maxTurns) / 5);
+		// 	loaded(percent);
+		// }
+
+		var moves = {
+			"n": [-1,  0],
+			"e": [ 0,  1],
+			"s": [ 1,  0],
+			"w": [ 0, -1]
+		};
+
+		for (var i = 0; i < this.snakes.length; i++) {
+			if (this.snakes[i].timeout) { 
+				this.snakes[i].timeout -= 1;
+			} else {			
+				var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
+				next = this.findNewCell(this.snakes[i], moves[move])
+				this.moveToCell(this.snakes[i], next[0], next[1])
+
+				this.log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
+			}
+		}	
+
+		return true;
+	}
 
 	this.addSnakes = function snakeGameAddSnakes () {
 		_u.shuffleArray(this.bots);
@@ -85,6 +92,10 @@ module.exports = function SnakeGame (bots)
 			this.scores[newSnake.name+" "+newSnake.letter] = this.snakes[this.snakes.length-1].score;
 		};
 	};
+
+	this.lastFrame = function snakeGameLastFrame () {
+		return this.log[this.log.length - 1];
+	}
 
 	this.writeLog = function snakeGameWriteLog () {
 		var output = "var log = " + JSON.stringify(log, null, "\t")
@@ -273,42 +284,204 @@ console.log(my_snake.is_valid())
 console.log(my_snake.print())
 */ 
 
-},{"./snake.js":3,"./utilities":4,"fs":9}],2:[function(require,module,exports){
+},{"./snake.js":3,"./utilities":4,"fs":10}],2:[function(require,module,exports){
 var TIMER_INTERVAL = 62;
 var SnakeGame = require("./game");
 var angular = require("angular");
-var ngRoute = require("angular-route");
 
-var snakeAppModule = angular.module("myApp", [ngRoute]);
+require("angular-route");
+require("angular-ui-codemirror");
+
+var snakeAppModule = angular.module("myApp", ["ngRoute", "ui.codemirror"]);
+
 snakeAppModule.config(function ($routeProvider) {
+    $routeProvider.when("/editor", {
+        templateUrl: "views/editor.html"
+    });
+    $routeProvider.when("/arena", {
+        templateUrl: "views/arena.html"
+    });
+    $routeProvider.when("/snakes", {
+        templateUrl: "views/dashboard.html"
+    });
+    $routeProvider.when("/docs", {
+        templateUrl: "views/docs.html"
+    });
     $routeProvider.when("/", {
-        templateUrl: "views/board.html"
+        templateUrl: "views/landing-page.html"
     });
 });
-snakeAppModule.controller("snakeController", function($scope, $interval){
 
-    var game = new SnakeGame(bots, true);
-    game.run();
+snakeAppModule.factory("snakeTestingFactory", function () {
+    var factory = {
+        testSnake: 'if (utils.rand() < 0.5) {\n    return "s";\n} else {\n    return "e";\n}'
+    };
+    factory.getTestSnake = function () {
+        return factory.testSnake;
+    };
+    factory.setTestSnake = function (code) {
+        factory.testSnake = code;
+    };
+    return factory;
+});
 
-    $scope.frame = -1;
+snakeAppModule.factory("arenaFactory", function () {
+    var factory = {
+        
+    };
+    factory.makeNewGame = function (bots) {
+        factory.game = new SnakeGame(bots, true);
+        factory.game.setup();
+        return factory.game;
+    };
+    factory.getCurrentGame = function (code) {
+        return factory.game;
+    };
+    return factory;
+});
 
-    function changeGrid(){
-        $scope.frame++;
+snakeAppModule.controller("masterController", function ($scope, $location) {
+    $scope.currentTab = "";
+    $scope.goToTab = function (tab) {
+        $scope.currentTab = tab;
+        $location.url("/" + tab);
+    };
+});
 
-        if ($scope.frame == game.log.length) {
-            $interval.cancel(timer);
-        } else {
-            $scope.curr_frame = game.log[$scope.frame];
+snakeAppModule.controller("arenaController", function(arenaFactory, snakeTestingFactory, $scope, $timeout, $location){
+
+    var simpleSnake = `\n
+        snake.saved.num = snake.saved.num || 1;
+        // utils.print(snake.saved);
+        if (snake.saved.num > 8) {
+            snake.saved.num = 1;
+            var rand = utils.rand();
+            // utils.print(rand);
+            if (rand < 0.5) {
+                var t = snake.rightTile();
+            } else {
+                var t = snake.leftTile();
+            }
+            // utils.print(t);
+            return t.cdir;
+        }
+        snake.saved.num += 1;
+        var t = snake.forwardTile();
+        return t.cdir
+    \n`;
+
+    var snakeBots = [{ move: makeSafeScript(simpleSnake), name: "simplyy" }];
+
+    var testSnake = snakeTestingFactory.getTestSnake();
+    if (!testSnake) {
+        return;
+    }
+
+    snakeBots.push({
+        move: makeSafeScript(testSnake),
+        name: "Tester"
+    });
+
+    var game = arenaFactory.getCurrentGame();
+    if (!game) {
+        game = arenaFactory.makeNewGame(snakeBots);
+    }
+
+    var timer;
+
+    function runFrame () {
+        if ($location.url().indexOf("arena") < 0) {
+            // game.paused = true;
+            return;
+        }
+        if (game.runFrame()) {
+            $scope.curr_frame = game.lastFrame();
+            $timeout(runFrame, TIMER_INTERVAL);
         }
     }
 
-    timer = $interval(changeGrid, TIMER_INTERVAL);
-
-    $scope.$on("$destroy", function() {
-        $interval.cancel(timer);
-    });
+    runFrame();
 });
-},{"./game":1,"angular":8,"angular-route":6}],3:[function(require,module,exports){
+
+snakeAppModule.controller("editorController", function (snakeTestingFactory, $scope, $location) {
+    $scope.editorOptions = {
+        mode: "javascript",
+        lineNumbers: true,
+        matchBrackets: true,
+        keyMap: "sublime",
+        indentUnit: 4,
+        extraKeys:{
+            Tab: function (cm) {
+                if (cm.options.indentWithTabs) {
+                    cm.execCommand("insertTab");
+                } else {
+                    cm.execCommand("insertSoftTab");
+                }
+            }
+        },
+        theme: "lesser-dark"
+    };
+    $scope.snakeCode = {text: snakeTestingFactory.getTestSnake()};
+    $scope.testSnake = function (code) {
+        snakeTestingFactory.setTestSnake(code);
+        $location.url("/arena?test-snake=true");
+    };
+    // $scope.currentColorTheme = "lesser-dark";
+    $scope.colorThemes = ["3024-day", "3024-night", "abcdef", "ambiance-mobile", "ambiance", "base16-dark", "base16-light", "bespin", "blackboard", "cobalt", "colorforth", "dracula", "eclipse", "elegant", "erlang-dark", "hopscotch", "icecoder", "isotope", "lesser-dark", "liquibyte", "material", "mbo", "mdn-like", "midnight", "monokai", "neat", "neo", "night", "panda-syntax", "paraiso-dark", "paraiso-light", "pastel-on-dark", "railscasts", "rubyblue", "seti", "solarized", "the-matrix", "tomorrow-night-bright", "tomorrow-night-eighties", "ttcn", "twilight", "vibrant-ink", "xq-dark", "xq-light", "yeti", "zenburn"];
+})
+
+function makeSafeScript (scriptBody) {
+    var vm = require("vm");
+
+    var nullify = "";
+    var globals = Object.getOwnPropertyNames(window);
+    for (var i = 0; i < globals.length; i++) {
+        nullify += `var ${globals[i]}=null;`;
+    }
+    var scriptStart = "\n\nfunction getMove (snake, map, utils) { var window=null; var global=null;";
+    var scriptEnd = "\n}\ngetMove.call(snake, snake, map, utils);";
+
+    var scriptCode = nullify + scriptStart + scriptBody + scriptEnd;
+
+    var utils = {
+        print: function () {
+            console.log("LOG", arguments);
+        },
+        mod: function (a, b) {
+            return ( ( a%b ) + b) % b;
+        },
+        rand: function () {
+            return Math.random();
+        },
+        floor: function (x) {
+            return Math.floor(x);
+        },
+        round: function (x) {
+            return Math.round(x);
+        }
+    };
+
+    var script =  new vm.Script(scriptCode);
+    
+    return function getMove (map, snake) {
+        var context = new vm.createContext({
+            snake: snake,
+            map: map,
+            utils: utils
+        });
+
+        try {
+            var res = script.runInContext(context);
+            console.log("RES:", res);
+            return res;
+        } catch (error) {
+            console.log("ERROR IN CODE", error);
+            return "?";
+        }
+
+    };
+}
+},{"./game":1,"angular":9,"angular-route":6,"angular-ui-codemirror":7,"vm":12}],3:[function(require,module,exports){
 module.exports = function Snake (move_function, letter) {
 	// Snake implemented as a doubly-linked list for easily adding a new head and removing the tail
 	this.head = null;
@@ -1652,6 +1825,158 @@ require('./angular-route');
 module.exports = 'ngRoute';
 
 },{"./angular-route":5}],7:[function(require,module,exports){
+'use strict';
+
+/**
+ * Binds a CodeMirror widget to a <textarea> element.
+ */
+angular.module('ui.codemirror', [])
+  .constant('uiCodemirrorConfig', {})
+  .directive('uiCodemirror', uiCodemirrorDirective);
+
+/**
+ * @ngInject
+ */
+function uiCodemirrorDirective($timeout, uiCodemirrorConfig) {
+
+  return {
+    restrict: 'EA',
+    require: '?ngModel',
+    compile: function compile() {
+
+      // Require CodeMirror
+      if (angular.isUndefined(window.CodeMirror)) {
+        throw new Error('ui-codemirror needs CodeMirror to work... (o rly?)');
+      }
+
+      return postLink;
+    }
+  };
+
+  function postLink(scope, iElement, iAttrs, ngModel) {
+
+    var codemirrorOptions = angular.extend(
+      { value: iElement.text() },
+      uiCodemirrorConfig.codemirror || {},
+      scope.$eval(iAttrs.uiCodemirror),
+      scope.$eval(iAttrs.uiCodemirrorOpts)
+    );
+
+    var codemirror = newCodemirrorEditor(iElement, codemirrorOptions);
+
+    configOptionsWatcher(
+      codemirror,
+      iAttrs.uiCodemirror || iAttrs.uiCodemirrorOpts,
+      scope
+    );
+
+    configNgModelLink(codemirror, ngModel, scope);
+
+    configUiRefreshAttribute(codemirror, iAttrs.uiRefresh, scope);
+
+    // Allow access to the CodeMirror instance through a broadcasted event
+    // eg: $broadcast('CodeMirror', function(cm){...});
+    scope.$on('CodeMirror', function(event, callback) {
+      if (angular.isFunction(callback)) {
+        callback(codemirror);
+      } else {
+        throw new Error('the CodeMirror event requires a callback function');
+      }
+    });
+
+    // onLoad callback
+    if (angular.isFunction(codemirrorOptions.onLoad)) {
+      codemirrorOptions.onLoad(codemirror);
+    }
+  }
+
+  function newCodemirrorEditor(iElement, codemirrorOptions) {
+    var codemirrot;
+
+    if (iElement[0].tagName === 'TEXTAREA') {
+      // Might bug but still ...
+      codemirrot = window.CodeMirror.fromTextArea(iElement[0], codemirrorOptions);
+    } else {
+      iElement.html('');
+      codemirrot = new window.CodeMirror(function(cm_el) {
+        iElement.append(cm_el);
+      }, codemirrorOptions);
+    }
+
+    return codemirrot;
+  }
+
+  function configOptionsWatcher(codemirrot, uiCodemirrorAttr, scope) {
+    if (!uiCodemirrorAttr) { return; }
+
+    var codemirrorDefaultsKeys = Object.keys(window.CodeMirror.defaults);
+    scope.$watch(uiCodemirrorAttr, updateOptions, true);
+    function updateOptions(newValues, oldValue) {
+      if (!angular.isObject(newValues)) { return; }
+      codemirrorDefaultsKeys.forEach(function(key) {
+        if (newValues.hasOwnProperty(key)) {
+
+          if (oldValue && newValues[key] === oldValue[key]) {
+            return;
+          }
+
+          codemirrot.setOption(key, newValues[key]);
+        }
+      });
+    }
+  }
+
+  function configNgModelLink(codemirror, ngModel, scope) {
+    if (!ngModel) { return; }
+    // CodeMirror expects a string, so make sure it gets one.
+    // This does not change the model.
+    ngModel.$formatters.push(function(value) {
+      if (angular.isUndefined(value) || value === null) {
+        return '';
+      } else if (angular.isObject(value) || angular.isArray(value)) {
+        throw new Error('ui-codemirror cannot use an object or an array as a model');
+      }
+      return value;
+    });
+
+
+    // Override the ngModelController $render method, which is what gets called when the model is updated.
+    // This takes care of the synchronizing the codeMirror element with the underlying model, in the case that it is changed by something else.
+    ngModel.$render = function() {
+      //Code mirror expects a string so make sure it gets one
+      //Although the formatter have already done this, it can be possible that another formatter returns undefined (for example the required directive)
+      var safeViewValue = ngModel.$viewValue || '';
+      codemirror.setValue(safeViewValue);
+    };
+
+
+    // Keep the ngModel in sync with changes from CodeMirror
+    codemirror.on('change', function(instance) {
+      var newValue = instance.getValue();
+      if (newValue !== ngModel.$viewValue) {
+        scope.$evalAsync(function() {
+          ngModel.$setViewValue(newValue);
+        });
+      }
+    });
+  }
+
+  function configUiRefreshAttribute(codeMirror, uiRefreshAttr, scope) {
+    if (!uiRefreshAttr) { return; }
+
+    scope.$watch(uiRefreshAttr, function(newVal, oldVal) {
+      // Skip the initial watch firing
+      if (newVal !== oldVal) {
+        $timeout(function() {
+          codeMirror.refresh();
+        });
+      }
+    });
+  }
+
+}
+
+},{}],8:[function(require,module,exports){
 /**
  * @license AngularJS v1.5.8
  * (c) 2010-2016 Google, Inc. http://angularjs.org
@@ -33420,10 +33745,161 @@ $provide.value("$locale", {
 })(window);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":7}],9:[function(require,module,exports){
+},{"./angular":8}],10:[function(require,module,exports){
 
-},{}]},{},[2]);
+},{}],11:[function(require,module,exports){
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+},{}],12:[function(require,module,exports){
+var indexOf = require('indexof');
+
+var Object_keys = function (obj) {
+    if (Object.keys) return Object.keys(obj)
+    else {
+        var res = [];
+        for (var key in obj) res.push(key)
+        return res;
+    }
+};
+
+var forEach = function (xs, fn) {
+    if (xs.forEach) return xs.forEach(fn)
+    else for (var i = 0; i < xs.length; i++) {
+        fn(xs[i], i, xs);
+    }
+};
+
+var defineProp = (function() {
+    try {
+        Object.defineProperty({}, '_', {});
+        return function(obj, name, value) {
+            Object.defineProperty(obj, name, {
+                writable: true,
+                enumerable: false,
+                configurable: true,
+                value: value
+            })
+        };
+    } catch(e) {
+        return function(obj, name, value) {
+            obj[name] = value;
+        };
+    }
+}());
+
+var globals = ['Array', 'Boolean', 'Date', 'Error', 'EvalError', 'Function',
+'Infinity', 'JSON', 'Math', 'NaN', 'Number', 'Object', 'RangeError',
+'ReferenceError', 'RegExp', 'String', 'SyntaxError', 'TypeError', 'URIError',
+'decodeURI', 'decodeURIComponent', 'encodeURI', 'encodeURIComponent', 'escape',
+'eval', 'isFinite', 'isNaN', 'parseFloat', 'parseInt', 'undefined', 'unescape'];
+
+function Context() {}
+Context.prototype = {};
+
+var Script = exports.Script = function NodeScript (code) {
+    if (!(this instanceof Script)) return new Script(code);
+    this.code = code;
+};
+
+Script.prototype.runInContext = function (context) {
+    if (!(context instanceof Context)) {
+        throw new TypeError("needs a 'context' argument.");
+    }
+    
+    var iframe = document.createElement('iframe');
+    if (!iframe.style) iframe.style = {};
+    iframe.style.display = 'none';
+    
+    document.body.appendChild(iframe);
+    
+    var win = iframe.contentWindow;
+    var wEval = win.eval, wExecScript = win.execScript;
+
+    if (!wEval && wExecScript) {
+        // win.eval() magically appears when this is called in IE:
+        wExecScript.call(win, 'null');
+        wEval = win.eval;
+    }
+    
+    forEach(Object_keys(context), function (key) {
+        win[key] = context[key];
+    });
+    forEach(globals, function (key) {
+        if (context[key]) {
+            win[key] = context[key];
+        }
+    });
+    
+    var winKeys = Object_keys(win);
+
+    var res = wEval.call(win, this.code);
+    
+    forEach(Object_keys(win), function (key) {
+        // Avoid copying circular objects like `top` and `window` by only
+        // updating existing context properties or new properties in the `win`
+        // that was only introduced after the eval.
+        if (key in context || indexOf(winKeys, key) === -1) {
+            context[key] = win[key];
+        }
+    });
+
+    forEach(globals, function (key) {
+        if (!(key in context)) {
+            defineProp(context, key, win[key]);
+        }
+    });
+    
+    document.body.removeChild(iframe);
+    
+    return res;
+};
+
+Script.prototype.runInThisContext = function () {
+    return eval(this.code); // maybe...
+};
+
+Script.prototype.runInNewContext = function (context) {
+    var ctx = Script.createContext(context);
+    var res = this.runInContext(ctx);
+
+    forEach(Object_keys(ctx), function (key) {
+        context[key] = ctx[key];
+    });
+
+    return res;
+};
+
+forEach(Object_keys(Script.prototype), function (name) {
+    exports[name] = Script[name] = function (code) {
+        var s = Script(code);
+        return s[name].apply(s, [].slice.call(arguments, 1));
+    };
+});
+
+exports.createScript = function (code) {
+    return exports.Script(code);
+};
+
+exports.createContext = Script.createContext = function (context) {
+    var copy = new Context();
+    if(typeof context === 'object') {
+        forEach(Object_keys(context), function (key) {
+            copy[key] = context[key];
+        });
+    }
+    return copy;
+};
+
+},{"indexof":11}]},{},[2]);

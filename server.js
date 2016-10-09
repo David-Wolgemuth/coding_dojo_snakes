@@ -31,7 +31,10 @@ app.use(session({
 var router = express.Router();
 require("./config/routes.js")(router);
 app.use("/", router);
+
 app.use(express.static(__dirname + "/client"));
+app.use("/styles", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
+app.use("/codemirror",express.static( __dirname + "/node_modules/" + "codemirror"));
 
 //------------ Server Listen -------------//
 var port = process.env.PORT || 3000;
