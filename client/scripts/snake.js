@@ -148,10 +148,10 @@ function UserSnake (snake, map) {
 	this.tail = function () {
 		return snake.tail.coords();
 	}
-	var dirMethods = ["forward", "back", "left", "right"];
+	var dirMethods = ["Forward", "Back", "Left", "Right"];
 	for (var i = 0; i < dirMethods.length; i++) {
 		// this.forwardTile = function () { using "f" as direction }
-		this[dirMethods[i] + "Tile"] = makeDirectionalMethod(dirMethods[i][0]);
+		this["get" + dirMethods[i] + "Tile"] = makeDirectionalMethod(dirMethods[i][0].toLowerCase());
 	}
 	function makeDirectionalMethod (dir) {
 		return function () {

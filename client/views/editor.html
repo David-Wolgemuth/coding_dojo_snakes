@@ -2,18 +2,52 @@
 <div ng-controller="editorController">
 	<link rel="stylesheet" ng-href="codemirror/theme/{{ editorOptions.theme }}.css">
 
-	<form class="form-inline">
-		<label>Color Theme:</label>
-		<select ng-model="editorOptions.theme" class="form-control" ng-change="setColorTheme(editorOptions.theme)"> <option ng-repeat="colorTheme in colorThemes" val="colorTheme">{{ colorTheme }}</option> </select>
+	<br>
+	<div class="container">
+		<form class="form-inline">
+			<button class="btn btn-default" ng-if="settingsHidden" ng-click="showEditorSettings()">Show Editor Settings</button>
+			<div ng-hide="settingsHidden">
+				<button class="btn btn-default" ng-if="!settingsHidden" ng-click="hideEditorSettings()">Hide Editor Settings</button>
+				<label>Color Theme:</label>
+				<select ng-model="editorOptions.theme" class="form-control" ng-change="saveEditorSettings()"> <option ng-repeat="colorTheme in colorThemes" val="colorTheme">{{ colorTheme }}</option> </select>
 
-		<label for="sublime">Sublime:</label>
-		<input type="radio" id="sublime" ng-model="editorOptions.keyMap" value="sublime">
-		<label for="vim">Vim:</label>
-		<input type="radio" id="vim" ng-model="editorOptions.keyMap" value="vim">
-	</form>
+				<label for="sublime">Sublime:</label>
+				<input type="radio" id="sublime" ng-click="saveEditorSettings()" ng-model="editorOptions.keyMap" value="sublime">
+				<label for="vim">Vim:</label>
+				<input type="radio" id="vim" ng-click="saveEditorSettings()" ng-model="editorOptions.keyMap" value="vim">
+			</div>
+		</form>
+	</div><hr><br>
+	<ui-codemirror id="editor" ng-model="snakeCode.content" ui-codemirror-opts="editorOptions"></ui-codemirror>
 
-	<ui-codemirror ng-model="snakeCode.text" ui-codemirror-opts="editorOptions"></ui-codemirror>
+	<br><hr>
 
-	<button class="btn btn-default" ng-click="testSnake(snakeCode.text)">Run Snake in Test Arena</button>
+	<div class="container">
+		
+		<form class="form">
+			<input type="hidden" ng-model="snake._id">
+
+			<div>
+				<label for="nameOfSnake">Snake Name:</label>
+				<input id="nameOfSnake" required="required" class="form-control" type="text" ng-model="snake.name" placeholder="Slithers">
+			</div>
+
+			<div>
+				<label for="privateSnake">Private</label>
+				<input id="privateSnake" type="checkbox" ng-model="snake.private">	
+				<i>Other Users Will Not Be Able To Battle</i>
+			</div>
+
+			<div>
+				<label for="color-picker">Color</label>
+				<color-picker required="required" id="color-picker" options="{ format: 'hex' }" ng-model="snake.color"></color-picker>
+			</div>
+			<hr>
+			<div>
+				<button class="btn btn-default" ng-click="testSnake(snakeCode.content)">Run Snake in Test Arena</button>
+				<input class="btn btn-default" ng-click="saveSnake(snake)" type="submit" value="Save">
+			</div>
+		</form>
+	</div>
 
 </div>

@@ -37,5 +37,11 @@ var UserSchema = new mongoose.Schema({
 
 // Add Secure Passwords
 UserSchema.plugin(bcrypt);
+UserSchema.methods.public = function () {
+    var obj = this.toObject();
+    delete obj.password;
+    delete obj.email;
+    return obj;
+};
 
 mongoose.model("User", UserSchema);

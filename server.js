@@ -33,7 +33,8 @@ require("./config/routes.js")(router);
 app.use("/", router);
 
 app.use(express.static(__dirname + "/client"));
-app.use("/styles", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
+app.use("/node_modules", express.static(__dirname + "/node_modules"));
+app.use("/styles", express.static(__dirname + "/node_modules/bootstrap/dist"));
 app.use("/codemirror",express.static( __dirname + "/node_modules/" + "codemirror"));
 
 //------------ Server Listen -------------//

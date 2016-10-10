@@ -1,12 +1,16 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html ng-app="myApp">
 	<head>
 		<title>Watch Replay</title>
 		<link rel="stylesheet" type="text/css" href="styles/replay.css">
-		<link rel="stylesheet" type="text/css" href="styles/bootstrap.css">
+		<link rel="stylesheet" type="text/css" href="styles/css/bootstrap.css">
+		<link rel="stylesheet" type="text/css" href="styles/fonts/glyphicons-halflings-regular.woff">
 		<script type="text/javascript" src="../bots.js"></script>
 		<script type="text/javascript" src="script.js"></script>
-
+		
+		<link rel="stylesheet" href="node_modules/angularjs-color-picker/dist/angularjs-color-picker.min.css" />
+		<link rel="stylesheet" href="node_modules/angularjs-color-picker/dist/themes/angularjs-color-picker-bootstrap.min.css" />
 
 		<link rel="stylesheet" type="text/css" href="codemirror/lib/codemirror.css">
 		<script type="text/javascript" src="codemirror/lib/codemirror.js"></script>
@@ -21,6 +25,7 @@
 		<div class="container">
 			<nav>
 				<ul class="nav nav-tabs">
+					<li role="presentation" ng-class="(currentTab == '') ? 'active' : '' "><a href ng-click="goToTab('')">Landing</a></li>
 					<li role="presentation" ng-class="(currentTab == 'snakes') ? 'active' : '' "><a href ng-click="goToTab('snakes')">Snakes</a></li>
 					<li role="presentation" ng-class="(currentTab == 'arena') ? 'active' : '' "><a href ng-click="goToTab('arena')">Arena</a></li>
 					<li role="presentation" ng-class="(currentTab == 'editor') ? 'active' : '' "><a href ng-click="goToTab('editor')">Editor</a></li>

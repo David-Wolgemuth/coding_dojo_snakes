@@ -5,6 +5,10 @@ var SnakeSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
+    name: {
+        type: String,
+        index: {unique:true}
+    },
     color: {
         type: String,
     },
@@ -16,10 +20,10 @@ var SnakeSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    stars: {
+    stars: [{
         type: mongoose.Schema.Types.ObjectId,
         ref:  "User"
-    }
+    }]
 }, {
     timestamps: true
 });

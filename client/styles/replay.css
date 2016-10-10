@@ -1,6 +1,5 @@
 div.outer{
 	display: inline-block;
-	/*border: 1px solid black;*/
 	vertical-align: top;
 }
 
@@ -10,7 +9,6 @@ div.cell{
 	width: 10px;
 	margin: 0px;
 	padding: 0px;
-	/*border: 1px solid black;*/
 	float: left;
 }
 

@@ -21,6 +21,7 @@
     "angular": "^1.5.8",
     "angular-route": "^1.5.8",
     "angular-ui-codemirror": "^0.3.0",
+    "angularjs-color-picker": "^2.5.0",
     "babelify": "^7.3.0",
     "body-parser": "^1.15.2",
     "bootstrap": "^3.3.7",

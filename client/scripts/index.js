@@ -1,11 +1,11 @@
-var TIMER_INTERVAL = 62;
 var SnakeGame = require("./game");
 var angular = require("angular");
 
 require("angular-route");
 require("angular-ui-codemirror");
+require("angularjs-color-picker")
 
-var snakeAppModule = angular.module("myApp", ["ngRoute", "ui.codemirror"]);
+var snakeAppModule = angular.module("myApp", ["ngRoute", "ui.codemirror", "color.picker"]);
 
 snakeAppModule.config(function ($routeProvider) {
     $routeProvider.when("/editor", {
@@ -25,15 +25,112 @@ snakeAppModule.config(function ($routeProvider) {
     });
 });
 
-snakeAppModule.factory("snakeTestingFactory", function () {
+snakeAppModule.factory("userFactory", function ($http) {
+    var factory = {};
+    factory.me = null;
+    factory.whoAmI = function (callback) {
+        $http({
+            method: "GET",
+            url: "/me"
+        }).then(function (res) {
+            console.log(res);
+            if (res.data.user) {
+                factory.me = res.data.user;
+                callback(factory.me);
+            } else {
+                factory.me = null;
+                callback(null);
+            }
+        }).catch(function () { callback(null); });
+    };
+    factory.login = function (data, callback) {
+        $http({
+            method: "POST",
+            url: "/login",
+            data: data
+        }).then(function (res) {
+            console.log("RES:", res);
+            factory.me = res.data.user;
+            callback(null, res.data.user);
+        }).catch(function (res) {
+            console.log("ERR:", res.data.message);
+            callback(res.data.message, null);  
+            factory.me = null;
+        });
+    };
+    factory.signOut = function (callback) {
+        $http({
+            method: "GET",
+            url: "/logout"
+        }).then(function (res) {
+            factory.me = null;
+            callback();
+        }).catch(function (res) {
+            callback(res);
+        });
+    };
+    factory.register = function (data, callback) {
+        console.log("OUTGOING:", data);
+        $http({
+            method: "POST",
+            url: "/users",
+            data: data
+        }).then(function (res) {
+            console.log("RES:", res);
+            factory.me = res.data.user;
+            callback(null, res.data.user);
+        }).catch(function (res) {
+            console.log("ERR:", res.data.message);
+            callback(res.data.message, null);  
+            factory.me = null;
+        });
+    };
+    return factory;
+});
+
+snakeAppModule.factory("editorFactory", function ($http) {
     var factory = {
-        testSnake: 'if (utils.rand() < 0.5) {\n    return "s";\n} else {\n    return "e";\n}'
+        currentSnakeContent: 'if (utils.rand() > 0.1) {\n    return "s";\n} else {\n    var left = snake.getLeftTile();\n    utils.print("GOING LEFT!");\n    return left.cdir;\n}',
+        currentSnakeId: null
     };
-    factory.getTestSnake = function () {
-        return factory.testSnake;
+    factory.loadEditorSettings = function () {
+        return $http({
+            method: "GET",
+            url: "/editorSettings"
+        }).then(function (res) {
+            if (res.data.settings) {
+                factory.keyMap = res.data.settings.keyMap;
+                factory.theme = res.data.settings.theme;
+            }
+        });
     };
-    factory.setTestSnake = function (code) {
-        factory.testSnake = code;
+    factory.saveEditorSettings = function (options) {
+        factory.keyMap = options.keyMap;
+        factory.theme = options.theme;
+        console.log(options);
+        $http({
+            method: "POST",
+            url: "/editorSettings",
+            data: { keyMap: factory.keyMap, theme: factory.theme }
+        }).then(function (res) {
+            console.log(res);
+        });
+    };
+    return factory;
+});
+
+snakeAppModule.factory("snakeFactory", function ($http) {
+    var factory = {};
+    factory.save = function (snake, callback) {
+        $http({
+            method: "POST",
+            url: "/snakes",
+            data: snake
+        }).then(function (res) {
+            console.log(null, res.data.snake);
+        }).catch(function (res) {
+            console.log(res.data.message);
+        });
     };
     return factory;
 });
@@ -54,74 +151,89 @@ snakeAppModule.factory("arenaFactory", function () {
 });
 
 snakeAppModule.controller("masterController", function ($scope, $location) {
-    $scope.currentTab = "";
+    $scope.setCurrentTab = function (tab) {
+        $scope.currentTab = tab;
+    };
     $scope.goToTab = function (tab) {
         $scope.currentTab = tab;
         $location.url("/" + tab);
     };
 });
 
-snakeAppModule.controller("arenaController", function(arenaFactory, snakeTestingFactory, $scope, $timeout, $location){
-
+snakeAppModule.controller("arenaController", function(arenaFactory, editorFactory, $scope, $timeout, $location, $routeParams){
+    $scope.$parent.setCurrentTab("arena");
+    $scope.timeInterval = 62;
     var simpleSnake = `\n
         snake.saved.num = snake.saved.num || 1;
-        // utils.print(snake.saved);
         if (snake.saved.num > 8) {
             snake.saved.num = 1;
             var rand = utils.rand();
-            // utils.print(rand);
             if (rand < 0.5) {
-                var t = snake.rightTile();
+                var t = snake.getRightTile();
             } else {
-                var t = snake.leftTile();
+                var t = snake.getLeftTile();
             }
-            // utils.print(t);
             return t.cdir;
         }
         snake.saved.num += 1;
-        var t = snake.forwardTile();
+        var t = snake.getForwardTile();
         return t.cdir
     \n`;
 
+    $scope.testingSnake = !!$routeParams["test-snake"];
+    $scope.paused = true;
+
+    console.log($scope.testingSnake);
+
+    $scope.togglePause = function () { 
+        $scope.paused = !$scope.paused;
+        if (!$scope.paused) {
+            runFrame();
+        }
+    };
+
     var snakeBots = [{ move: makeSafeScript(simpleSnake), name: "simplyy" }];
 
-    var testSnake = snakeTestingFactory.getTestSnake();
-    if (!testSnake) {
+    var currentSnakeContent = editorFactory.currentSnakeContent;
+    if (!currentSnakeContent) {
         return;
     }
 
     snakeBots.push({
-        move: makeSafeScript(testSnake),
+        move: makeSafeScript(currentSnakeContent),
         name: "Tester"
     });
 
     var game = arenaFactory.getCurrentGame();
-    if (!game) {
+    if (!game || $scope.testingSnake) {
         game = arenaFactory.makeNewGame(snakeBots);
     }
 
     var timer;
 
+
     function runFrame () {
-        if ($location.url().indexOf("arena") < 0) {
-            // game.paused = true;
+        if ($location.url().indexOf("arena") < 0 || $scope.paused) {
             return;
         }
         if (game.runFrame()) {
             $scope.curr_frame = game.lastFrame();
-            $timeout(runFrame, TIMER_INTERVAL);
+            $timeout(runFrame, $scope.timeInterval);
         }
     }
 
+    game.runFrame();
+    $scope.curr_frame = game.lastFrame();
+    
     runFrame();
 });
 
-snakeAppModule.controller("editorController", function (snakeTestingFactory, $scope, $location) {
+snakeAppModule.controller("editorController", function (editorFactory, snakeFactory, userFactory, $scope, $location) {
+    $scope.$parent.setCurrentTab("editor");
     $scope.editorOptions = {
         mode: "javascript",
         lineNumbers: true,
         matchBrackets: true,
-        keyMap: "sublime",
         indentUnit: 4,
         extraKeys:{
             Tab: function (cm) {
@@ -132,16 +244,106 @@ snakeAppModule.controller("editorController", function (snakeTestingFactory, $sc
                 }
             }
         },
-        theme: "lesser-dark"
+        keyMap: editorFactory.keyMap || "sublime",
+        theme: editorFactory.theme || "mbo"
     };
-    $scope.snakeCode = {text: snakeTestingFactory.getTestSnake()};
+
+    $scope.snakeCode = {content: editorFactory.currentSnakeContent};
+
+    editorFactory.loadEditorSettings()
+    .then(function () {
+        if (editorFactory.theme) {
+            $scope.editorOptions.theme = editorFactory.theme;
+            $scope.editorOptions.keyMap = editorFactory.keyMap;
+        }
+    });
+
+    $scope.settingsHidden = true;
+    $scope.showEditorSettings = function () {
+        $scope.settingsHidden = false;
+    };
+    $scope.saveEditorSettings = function () {
+        editorFactory.saveEditorSettings($scope.editorOptions);
+    };
+    $scope.hideEditorSettings = function () {
+        editorFactory.saveEditorSettings($scope.editorOptions);
+        $scope.settingsHidden = true;
+    };
     $scope.testSnake = function (code) {
-        snakeTestingFactory.setTestSnake(code);
+        editorFactory.currentSnakeContent = code;
+        editorFactory.saveEditorSettings($scope.editorOptions);
         $location.url("/arena?test-snake=true");
     };
-    // $scope.currentColorTheme = "lesser-dark";
+    $scope.saveSnake = function (snake) {
+        console.log(snake);
+        if (!userFactory.me) {
+            $scope.error = "Not Logged In";
+            return;
+        }
+
+        snake.userId = userFactory.me._id;
+
+        return;
+        snakeFactory.save(snake, function (err, newSnake) {
+            if (err) {
+                $scope.error = err;
+                return;
+            }
+            console.log("Saved:", newSnake);
+        });
+    };
     $scope.colorThemes = ["3024-day", "3024-night", "abcdef", "ambiance-mobile", "ambiance", "base16-dark", "base16-light", "bespin", "blackboard", "cobalt", "colorforth", "dracula", "eclipse", "elegant", "erlang-dark", "hopscotch", "icecoder", "isotope", "lesser-dark", "liquibyte", "material", "mbo", "mdn-like", "midnight", "monokai", "neat", "neo", "night", "panda-syntax", "paraiso-dark", "paraiso-light", "pastel-on-dark", "railscasts", "rubyblue", "seti", "solarized", "the-matrix", "tomorrow-night-bright", "tomorrow-night-eighties", "ttcn", "twilight", "vibrant-ink", "xq-dark", "xq-light", "yeti", "zenburn"];
-})
+});
+
+snakeAppModule.controller("landingController", function (userFactory, $scope, $window) {
+    $scope.$parent.setCurrentTab("");
+
+    $scope.error = null;
+    $scope.signedInUser = userFactory.me;
+    console.log($scope.signedInUser);
+    if (!$scope.signedInUser) {
+        userFactory.whoAmI(function (me) {
+            $scope.signedInUser = me;
+        });
+    } 
+
+    $scope.login = function (user) {
+        userFactory.login(user, function (err, loggedInUser) {
+            if (err) {
+                $scope.error = err;
+            } else {
+                $scope.signedInUser = loggedInUser;
+                console.log("SIGNED IN:", $scope.signedInUser);
+            }
+        });
+    };
+    $scope.register = function (user) {
+        console.log(user);
+        userFactory.register(user, function (err, loggedInUser) {
+            if (err) {
+                $scope.error = err;
+            } else {
+                console.log("LOGGED IN", loggedInUser);
+            }
+        });
+    };
+    $scope.signOut = function () {
+        userFactory.signOut(function (err) {
+            if (err) {
+                console.log(err);
+            } else {
+                $scope.signedInUser = null;
+                $window.location.href = "/";
+            }
+        });
+    }
+});
+snakeAppModule.controller("snakesController", function ($scope) {
+    $scope.$parent.setCurrentTab("snakes");
+});
+snakeAppModule.controller("docsController", function ($scope) {
+    $scope.$parent.setCurrentTab("docs");
+});
 
 function makeSafeScript (scriptBody) {
     var vm = require("vm");
@@ -185,7 +387,6 @@ function makeSafeScript (scriptBody) {
 
         try {
             var res = script.runInContext(context);
-            console.log("RES:", res);
             return res;
         } catch (error) {
             console.log("ERROR IN CODE", error);
