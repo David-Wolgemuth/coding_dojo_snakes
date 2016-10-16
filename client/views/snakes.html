@@ -31,7 +31,10 @@
 				<td ng-bind="snake.name"></td>
 				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
 				<td ng-bind="snake.stars.length"></td>
-				<td><button class="btn btn-info" ng-click="edit(snake)">Edit</button></td>
+				<td>
+					<button class="btn btn-info" ng-click="edit(snake)">Edit</button>
+					<button class="btn btn-danger" ng-click="delete(snake)">Delete</button>
+				</td>
 			</tr>
 		</tbody>
 	</table>

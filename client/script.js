@@ -707,6 +707,7 @@ function SnakeFactory ($http) {
             url: "/snakes",
             data: snake
         }).then(function (res) {
+            factory.snakes.push(res.data.snake);
             console.log("Saved Snake:", res.data.snake);
         }).catch(function (res) {
             console.log("ERROR:", res.data.message);
@@ -730,8 +731,21 @@ function SnakeFactory ($http) {
             if (typeof callback === "function") {
                 callback(true);
             }
-        })
-    }
+        });
+    };
+    factory.delete = function (snake, callback)
+    {
+        $http({
+            method: "DELETE",
+            url: `/snakes/${snake._id}`
+        }).then(function () {
+            var idx = factory.snakes.indexOf(snake);
+            factory.snakes.splice(idx, 1);
+            if (typeof callback === "function") {
+                callback();
+            }
+        });
+    };
     return factory;
 }];
 },{}],9:[function(require,module,exports){
@@ -970,19 +984,21 @@ SnakeNode.prototype.coords = function () {
 module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
 function SnakesController (Snake, User, Arena, $scope, $location)
 {
+    $scope.$parent.setCurrentTab("snakes");
+
     $scope.selected = [];
-    $scope.snakes = [];
-    $scope.mySnakes = [];
 
     User.whoAmI(function (me) {
         $scope.me = User.me;
     });
 
-    $scope.$parent.setCurrentTab("snakes");
 
     Snake.index(function (snakes) {
+        $scope.snakes = [];
+        $scope.mySnakes = [];
+
         for (var i = 0; i < snakes.length; i++) {
-            if (snakes[i]._user._id === User.me._id) {
+            if (snakes[i]._user._id === User.me._id || snakes[i]._user === User.me._id) {
                 $scope.mySnakes.push(snakes[i]);
             } else {
                 $scope.snakes.push(snakes[i]);
@@ -1002,6 +1018,12 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     $scope.star = function (snake)
     {
         Snake.star(snake);
+    };
+    $scope.delete = function (snake)
+    {
+        Snake.delete(snake, function () {
+            $scope.mySnakes.splice($scope.mySnakes.indexOf(snake), 1);
+        });
     };
     $scope.select = function (snake)
     {

@@ -18,12 +18,14 @@ module.exports = (function Snakes ()
             case "with-users":
                 options.populate = "_user";
         }
+        console.log("\nFILTER", filter);
         Snake.find(filter).sort(options.sort).limit(options.limit).populate(options.populate)
         .exec(function (err, snakes) {
             if (err) {
                 console.log("snakes.index:", err);
                 return res.status(500).json({ message: err });
             }
+            console.log("SNAKES", snakes);
             if (options.limit === 1) {
                 res.json({ message: "Results", snake: snakes[0] });
             } else {
@@ -115,5 +117,14 @@ module.exports = (function Snakes ()
             });
         });
     };
+    controller.delete = function (req, res)
+    {
+        Snake.remove({ _id: req.params.id }, function (err, snake) {
+            if (err) {
+                return res.status(500).json({ message: err });
+            }
+            return res.json({ message: "Successfully Deleted" });
+        });
+    }
     return controller
 })();

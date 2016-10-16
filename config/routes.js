@@ -16,5 +16,6 @@ module.exports = function (router)
     .get("/snakes", Snakes.index)
     .post("/snakes", Snakes.create)
     .post("/snakes/star", Snakes.star)
-    .put("/snakes/:id", Snakes.update);
+    .put("/snakes/:id", Snakes.update)
+    .delete("/snakes/:id", Snakes.delete);
 };

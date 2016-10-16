@@ -99,6 +99,7 @@ function SnakeFactory ($http) {
             url: "/snakes",
             data: snake
         }).then(function (res) {
+            factory.snakes.push(res.data.snake);
             console.log("Saved Snake:", res.data.snake);
         }).catch(function (res) {
             console.log("ERROR:", res.data.message);
@@ -122,7 +123,20 @@ function SnakeFactory ($http) {
             if (typeof callback === "function") {
                 callback(true);
             }
-        })
-    }
+        });
+    };
+    factory.delete = function (snake, callback)
+    {
+        $http({
+            method: "DELETE",
+            url: `/snakes/${snake._id}`
+        }).then(function () {
+            var idx = factory.snakes.indexOf(snake);
+            factory.snakes.splice(idx, 1);
+            if (typeof callback === "function") {
+                callback();
+            }
+        });
+    };
     return factory;
 }];
