@@ -1,5 +1,5 @@
-module.exports = ["snakeFactory", "userFactory", "$scope", "$location",
-function EditorController (Snake, User, $scope, $location) {
+module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
+function EditorController (Snake, User, Arena, $scope, $location) {
     $scope.$parent.setCurrentTab("editor");
     $scope.editorOptions = {
         mode: "javascript",
@@ -46,11 +46,11 @@ function EditorController (Snake, User, $scope, $location) {
         Snake.saveEditorSettings($scope.editorOptions);
         $scope.settingsHidden = true;
     };
-    $scope.testSnake = function (code)
+    $scope.testSnake = function ()
     {
-        Snake.currentSnakeContent = code;
         Snake.saveEditorSettings($scope.editorOptions);
-        $location.url("/arena?test-snake=true");
+        Arena.makeNewTest($scope.snake);
+        $location.url("/arena");
     };
     $scope.saveSnake = function (snake, saveAsNew)
     {

@@ -19,6 +19,14 @@
 				<p ng-repeat="(player, score) in curr_frame.scores" class="{{ player.slice(-1) }}">{{ player }}: {{ score }} </p>
 			</div>
 		</div>
+		<button ng-click="consoleVisible=!consoleVisible" ng-bind="(consoleVisible) ? 'Hide Console' : 'Show Console'"></button>
+		<div ng-if="consoleVisible">
+			<p ng-repeat="log in game.consoleLog">
+				<span style="background-color: {{ log.snake.color }}">____</span>
+				<span ng-bind="log.snake.name"></span>
+				<span ng-repeat="item in log" ng-bind="item"></span>
+			</p>
+		</div>
 	</div>
 	<a href="#/editor" ng-if="testingSnake">Return To Editor</a>
 </div>

@@ -3,9 +3,29 @@ function SnakeFactory ($http) {
     var defaultContent = 'if (utils.rand() > 0.1) {\n    return "s";\n} else {\n    var left = snake.getLeftTile();\n    utils.print("GOING LEFT!");\n    return left.cdir;\n}';
 
     var factory = {
-        current: null
+        current: null,
+        snakes: []
     };
 
+
+    factory.index = function (callback, force)
+    {
+        if (!force && factory.snakes.length > 0) {
+            if (typeof callback === "function") {
+                callback(factory.snakes);
+            }
+            return;
+        }
+        $http({
+            method: "GET",
+            url: "snakes?q=with-users"
+        }).then(function (res) {
+            factory.snakes = res.data.snakes;
+            if (typeof callback === "function") {
+                callback(factory.snakes);
+            }
+        });
+    };
     factory.getLastEdited = function (callback)
     {
         if (factory.current) {
@@ -18,7 +38,6 @@ function SnakeFactory ($http) {
             method: "GET",
             url: "snakes?q=last-edited"
         }).then(function (res) {
-            console.log(res);
             if (res.data.snake) {
                 factory.current = res.data.snake;
             } else {
@@ -52,7 +71,7 @@ function SnakeFactory ($http) {
             url: "/editorSettings",
             data: { keyMap: factory.keyMap, theme: factory.theme }
         }).then(function (res) {
-            console.log(res);
+            
         });
     };
     factory.reset = function (hard) {
@@ -77,6 +96,14 @@ function SnakeFactory ($http) {
     };
     factory.update = function (snake, callback) {
         console.log("UPDATING:", snake);
+        if (typeof snake._user === "object") {
+            var copy = {};
+            for (var key in snake) {
+                copy[key] = snake[key];
+            }
+            copy._user = snake._user._id;
+            snake = copy;
+        }
         $http({
             method: "PUT",
             url: `/snakes/${snake._id}`,

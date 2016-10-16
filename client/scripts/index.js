@@ -14,7 +14,7 @@ snakeAppModule.config(function ($routeProvider) {
         templateUrl: "views/arena.html"
     });
     $routeProvider.when("/snakes", {
-        templateUrl: "views/dashboard.html"
+        templateUrl: "views/snakes.html"
     });
     $routeProvider.when("/docs", {
         templateUrl: "views/docs.html"
@@ -30,10 +30,7 @@ snakeAppModule.config(function ($routeProvider) {
 .controller("arenaController", require("./arena-controller"))
 .controller("editorController", require("./editor-controller"))
 .controller("landingController", require("./landing-controller"))
-
-.controller("snakesController", function ($scope) {
-    $scope.$parent.setCurrentTab("snakes");
-})
+.controller("snakesController", require("./snakes-controller"))
 .controller("docsController", function ($scope) {
     $scope.$parent.setCurrentTab("docs");
 });

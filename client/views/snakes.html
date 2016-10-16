@@ -1,0 +1,61 @@
+<div ng-controller="snakesController">
+
+	<style type="text/css">
+		tr {
+			cursor: hand;
+			cursor: pointer;
+		}
+	</style>
+
+	<div class="jumbotron">
+		<h1>Snakes List</h1>
+		<p>Select At Least Two Snakes (Selected: <span ng-bind="selected.length"></span>)</p>
+		<p><a class="btn btn-lg" ng-class="(selected.length >= 2) ? 'btn-primary' : 'disabled'" href role="button" ng-click="createMatch()">Create Match</a></p>
+	</div>
+
+	<h3>My Snakes</h3>
+	<table class="table table-hover">
+		<thead>
+			<tr>
+				<th> <!-- Color --> </th>
+				<th>Name</th>
+				<th>Updated At</th>
+				<th> <!-- Actions --> </th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="snake in mySnakes" ng-click="select(snake)" ng-class="(selected.indexOf(snake) >= 0) ? 'active' : ''">
+				<td style="background-color: {{ snake.color }}">{{ snake.color }}</td>
+				<td ng-bind="snake.name"></td>
+				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
+				<td><button class="btn btn-info" ng-click="edit(snake)">Edit</button></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<a href="/#/editor">Create A Snake</a>
+
+	<hr>
+
+	<h3>All Public Snakes</h3>
+	<table class="table table-hover">
+		<thead>
+			<tr>
+				<th> <!-- Color --> </th>
+				<th>User</th>
+				<th>Name</th>
+				<th>Updated At</th>
+				<th> <!-- Actions --> </th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr ng-repeat="snake in snakes" ng-click="select(snake)" ng-class="(selected.indexOf(snake) >= 0) ? 'active' : ''">
+				<td style="background-color: {{ snake.color }}">{{ snake.color }}</td>
+				<td ng-bind="snake._user.username"></td>
+				<td ng-bind="snake.name"></td>
+				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
+				<td><button class="btn btn-default">View</button></td>
+			</tr>
+		</tbody>
+	</table>
+</div>

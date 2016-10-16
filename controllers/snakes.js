@@ -15,8 +15,11 @@ module.exports = (function Snakes ()
                 filter._user = req.session.userId
                 options.sort = { updatedAt: -1 };
                 options.limit = 1;
+            case "with-users":
+                options.populate = "_user";
         }
-        Snake.find(filter).sort(options.sort).limit(options.limit).exec(function (err, snakes) {
+        Snake.find(filter).sort(options.sort).limit(options.limit).populate(options.populate)
+        .exec(function (err, snakes) {
             if (err) {
                 console.log("snakes.index:", err);
                 return res.status(500).json({ message: err });
@@ -70,6 +73,7 @@ module.exports = (function Snakes ()
             snake.private = req.body.private;
             snake.save(function (err) {
                 if (err) {
+                    console.log("snakes.update", err);
                     return res.status(400).json({
                         message: err
                     });

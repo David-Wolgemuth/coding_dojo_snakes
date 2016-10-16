@@ -19,7 +19,7 @@ module.exports = (function Users ()
                     message: err
                 });
             } else {
-                res.session.userId = user._id;
+                req.session.userId = user._id;
                 res.json({
                     message: "Successfully Created User",
                     user: user.public()
