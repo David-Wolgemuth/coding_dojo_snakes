@@ -6,15 +6,14 @@ var SnakeSchema = new mongoose.Schema({
         ref: "User"
     },
     name: {
-        type: String,
-        index: {unique:true}
+        type: String
     },
     color: {
         type: String,
     },
     content: {
         type: String,
-        maxlength: 4000
+        maxlength: 2000
     },
     private: {
         type: Boolean,

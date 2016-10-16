@@ -45,7 +45,10 @@
 			<hr>
 			<div>
 				<button class="btn btn-default" ng-click="testSnake(snake.content)">Run Snake in Test Arena</button>
-				<input class="btn btn-default" ng-click="saveSnake(snake)" type="submit" value="Save">
+				<input class="btn btn-info" ng-click="saveSnake(snake, true)" type="submit" value="Save As New Snake">
+				<input class="btn btn-primary" ng-click="saveSnake(snake)" type="submit" value="Save Snake">
+				<input class="btn btn-warning" ng-click="reset(true)" type="button" value="Make New Snake">
+				<input class="btn btn-danger" ng-click="reset(false)" type="button" value="Reset">
 			</div>
 		</form>
 	</div>

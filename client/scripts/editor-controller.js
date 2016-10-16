@@ -33,28 +33,46 @@ function EditorController (Snake, User, $scope, $location) {
     });
 
     $scope.settingsHidden = true;
-    $scope.showEditorSettings = function () {
+    $scope.showEditorSettings = function ()
+    {
         $scope.settingsHidden = false;
     };
-    $scope.saveEditorSettings = function () {
+    $scope.saveEditorSettings = function ()
+    {
         Snake.saveEditorSettings($scope.editorOptions);
     };
-    $scope.hideEditorSettings = function () {
+    $scope.hideEditorSettings = function ()
+    {
         Snake.saveEditorSettings($scope.editorOptions);
         $scope.settingsHidden = true;
     };
-    $scope.testSnake = function (code) {
+    $scope.testSnake = function (code)
+    {
         Snake.currentSnakeContent = code;
         Snake.saveEditorSettings($scope.editorOptions);
         $location.url("/arena?test-snake=true");
     };
-    $scope.saveSnake = function (snake) {
-        console.log(snake);
+    $scope.saveSnake = function (snake, saveAsNew)
+    {
         if (!User.me) {
             console.log("NOT LOGGED IN");
             $scope.error = "Not Logged In";
             return;
         }
+
+        if (saveAsNew) {
+            // Copy All Values, Remove Id
+            var copy = {};
+            for (var key in snake) {
+                copy[key] = snake[key];
+            }
+            delete copy._id;
+            delete copy.createdAt;
+            delete copy.updatedAt;
+            snake = copy;
+        }
+
+        console.log(snake);
 
         if (snake._id) {
             console.log("UPDATING");
@@ -66,12 +84,17 @@ function EditorController (Snake, User, $scope, $location) {
 
         snake.userId = User.me._id;
         Snake.save(snake, function (err, newSnake) {
+            $scope.snake = newSnake;
             if (err) {
                 $scope.error = err;
                 return;
             }
             console.log("Saved:", newSnake);
         });
+    };
+    $scope.reset = function (hard)
+    {
+        $scope.snake = Snake.reset(hard);
     };
     $scope.colorThemes = ["3024-day", "3024-night", "abcdef", "ambiance-mobile", "ambiance", "base16-dark", "base16-light", "bespin", "blackboard", "cobalt", "colorforth", "dracula", "eclipse", "elegant", "erlang-dark", "hopscotch", "icecoder", "isotope", "lesser-dark", "liquibyte", "material", "mbo", "mdn-like", "midnight", "monokai", "neat", "neo", "night", "panda-syntax", "paraiso-dark", "paraiso-light", "pastel-on-dark", "railscasts", "rubyblue", "seti", "solarized", "the-matrix", "tomorrow-night-bright", "tomorrow-night-eighties", "ttcn", "twilight", "vibrant-ink", "xq-dark", "xq-light", "yeti", "zenburn"];
 }];

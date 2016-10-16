@@ -15,11 +15,10 @@ module.exports = (function Snakes ()
                 filter._user = req.session.userId
                 options.sort = { updatedAt: -1 };
                 options.limit = 1;
-                console.log("\n\n\n", filter ,"\n\n\n\n");
         }
         Snake.find(filter).sort(options.sort).limit(options.limit).exec(function (err, snakes) {
-            console.log(err, snakes);
             if (err) {
+                console.log("snakes.index:", err);
                 return res.status(500).json({ message: err });
             }
             if (options.limit === 1) {
@@ -31,7 +30,6 @@ module.exports = (function Snakes ()
     };
     controller.create = function (req, res)
     {
-        console.log("\n\n\nHIT CREATE\n\n\n");
         if (!req.session.userId) {
             return res.status(400).json({
                 message: "User Not Logged In"
@@ -46,6 +44,7 @@ module.exports = (function Snakes ()
         });
         snake.save(function (err) {
             if (err) {
+                console.log("snakes.create:", err);
                 res.status(400).json({
                     message: err
                 });
@@ -78,8 +77,8 @@ module.exports = (function Snakes ()
                 res.json({
                     message: "Successfully Saved Snake",
                     snake: snake
-                })
-            })
+                });
+            });
         });
     };
     return controller

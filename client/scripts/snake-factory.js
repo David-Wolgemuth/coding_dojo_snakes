@@ -55,6 +55,15 @@ function SnakeFactory ($http) {
             console.log(res);
         });
     };
+    factory.reset = function (hard) {
+        if (hard) {
+            delete factory.current._id;
+        }
+        factory.current.content = defaultContent;
+        factory.current.color = null;
+        factory.current.name = null;
+        return factory.current;
+    };
     factory.save = function (snake, callback) {
         $http({
             method: "POST",
