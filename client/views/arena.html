@@ -11,19 +11,24 @@
 			<div class="outer">
 				<div class="grid">
 					<div ng-repeat="row in curr_frame.grid track by $index" class="row">
-						<div ng-repeat="cell in row track by $index" class="cell {{cell}}"></div>
+						<div ng-repeat="cell in row track by $index" class="cell" style="background-color: {{ game.colors[cell] }}"></div>
 					</div>
 				</div>
 			</div>
 			<div class="outer">
-				<p ng-repeat="(player, score) in curr_frame.scores" class="{{ player.slice(-1) }}">{{ player }}: {{ score }} </p>
+				<!-- Score Board -->
+				<p ng-repeat="(player, score) in curr_frame.scores">
+					<span style="background-color: {{ game.colors[player.slice(-1)] }}">____</span>
+					<span ng-bind="player.slice(0, player.length - 2)"></span>
+					<span ng-bind="score"></span>
+				</p>	
 			</div>
 		</div>
 		<button ng-click="consoleVisible=!consoleVisible" ng-bind="(consoleVisible) ? 'Hide Console' : 'Show Console'"></button>
 		<div ng-if="consoleVisible">
-			<p ng-repeat="log in game.consoleLog">
+			<p ng-repeat="log in game.consoleLog | orderBy: '-'">
 				<span style="background-color: {{ log.snake.color }}">____</span>
-				<span ng-bind="log.snake.name"></span>
+				<span ng-bind="log.snake.name"></span> :::
 				<span ng-repeat="item in log" ng-bind="item"></span>
 			</p>
 		</div>

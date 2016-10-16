@@ -5,3 +5,6 @@
  - [x] View All My Snakes
  - [x] Load One of My Snakes
  - [x] Select Snakes To Send To Arena
+ - [x] Star Snakes
+ - [ ] Follow Users
+ - [ ] Delete Snakes

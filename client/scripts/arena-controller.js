@@ -18,6 +18,7 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
 
     $scope.game = Arena.getCurrentGame();
 
+    console.log($scope.game);
     var timer;
 
     function runFrame () {
@@ -25,6 +26,8 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
             return;
         }
         if ($scope.game.runFrame()) {
+            console.log($scope.curr_frame);
+            console.log($scope.game.scores);
             $scope.curr_frame = $scope.game.lastFrame();
             $timeout(runFrame, $scope.timeInterval);
         }
@@ -33,7 +36,6 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
     if ($scope.game) {
         $scope.game.runFrame();
         $scope.curr_frame = $scope.game.lastFrame();
-        
         runFrame();
     }
 }];

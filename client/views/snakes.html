@@ -1,7 +1,8 @@
 <div ng-controller="snakesController">
 
 	<style type="text/css">
-		tr {
+		.colorClick {
+			width: 64px;
 			cursor: hand;
 			cursor: pointer;
 		}
@@ -20,14 +21,16 @@
 				<th> <!-- Color --> </th>
 				<th>Name</th>
 				<th>Updated At</th>
+				<th>Stars</th>
 				<th> <!-- Actions --> </th>
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="snake in mySnakes" ng-click="select(snake)" ng-class="(selected.indexOf(snake) >= 0) ? 'active' : ''">
-				<td style="background-color: {{ snake.color }}">{{ snake.color }}</td>
+			<tr ng-repeat="snake in mySnakes" ng-class="(selected.indexOf(snake) >= 0) ? 'info' : ''">
+				<td style="background-color: {{ snake.color }}" ng-click="select(snake)" class="colorClick"></td>
 				<td ng-bind="snake.name"></td>
 				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
+				<td ng-bind="snake.stars.length"></td>
 				<td><button class="btn btn-info" ng-click="edit(snake)">Edit</button></td>
 			</tr>
 		</tbody>
@@ -45,16 +48,22 @@
 				<th>User</th>
 				<th>Name</th>
 				<th>Updated At</th>
+				<th>Stars</th>
 				<th> <!-- Actions --> </th>
 			</tr>
 		</thead>
 		<tbody>
-			<tr ng-repeat="snake in snakes" ng-click="select(snake)" ng-class="(selected.indexOf(snake) >= 0) ? 'active' : ''">
-				<td style="background-color: {{ snake.color }}">{{ snake.color }}</td>
+			<tr ng-repeat="snake in snakes" ng-class="(selected.indexOf(snake) >= 0) ? 'info' : ''">
+				<td style="background-color: {{ snake.color }}" ng-click="select(snake)" class="colorClick"></td>
 				<td ng-bind="snake._user.username"></td>
 				<td ng-bind="snake.name"></td>
 				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
-				<td><button class="btn btn-default">View</button></td>
+				<td ng-bind="snake.stars.length"></td>
+				<td>
+					<button class="btn btn-default" ng-click="star(snake)">
+						<span class="glyphicon" ng-class="(snake.stars.indexOf(me._id) >= 0) ? 'glyphicon-star' : 'glyphicon-star-empty'"></span>
+					</button>
+				</td>
 			</tr>
 		</tbody>
 	</table>

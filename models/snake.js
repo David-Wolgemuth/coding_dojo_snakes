@@ -15,10 +15,6 @@ var SnakeSchema = new mongoose.Schema({
         type: String,
         maxlength: 2000
     },
-    private: {
-        type: Boolean,
-        default: false
-    },
     stars: [{
         type: mongoose.Schema.Types.ObjectId,
         ref:  "User"

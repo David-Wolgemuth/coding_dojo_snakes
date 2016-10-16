@@ -19,6 +19,7 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
 
     $scope.game = Arena.getCurrentGame();
 
+    console.log($scope.game);
     var timer;
 
     function runFrame () {
@@ -26,6 +27,8 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
             return;
         }
         if ($scope.game.runFrame()) {
+            console.log($scope.curr_frame);
+            console.log($scope.game.scores);
             $scope.curr_frame = $scope.game.lastFrame();
             $timeout(runFrame, $scope.timeInterval);
         }
@@ -34,7 +37,6 @@ function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParam
     if ($scope.game) {
         $scope.game.runFrame();
         $scope.curr_frame = $scope.game.lastFrame();
-        
         runFrame();
     }
 }];
@@ -254,10 +256,13 @@ module.exports = function SnakeGame (bots)
 {
 	this.bots = bots;
 	this.startingLength = 3;
-	this.gridSize = this.bots.length*10
-	this.numberOfApples = Math.pow(this.gridSize,2)/4;
+	this.gridSize = this.bots.length * 10;
+	this.numberOfApples = Math.pow(this.gridSize, 2) / 4;
 	this.maxTurns = 5000000;
-	// this.keepLog = keepLog;
+	this.colors = {
+		"*": "gold",
+		".": "white"
+	};
 	this.scores = {};
 	this.snakes = [];
 	this.log = [];
@@ -271,7 +276,6 @@ module.exports = function SnakeGame (bots)
 		this.addSnakes();
 
 		// Place starting apples
-
 		for (var i = 0; i < this.numberOfApples; i++) {
 			var empty = this.findEmptyCell();
 			this.grid[empty[0]][empty[1]] = "*";
@@ -289,11 +293,6 @@ module.exports = function SnakeGame (bots)
 		}
 		this.maxTurns -= 1;
 
-		// if (this.maxTurns % 24 === 0) {
-		// 	var percent = Math.floor((500-this.maxTurns) / 5);
-		// 	loaded(percent);
-		// }
-
 		var moves = {
 			"n": [-1,  0],
 			"e": [ 0,  1],
@@ -305,22 +304,25 @@ module.exports = function SnakeGame (bots)
 			if (this.snakes[i].timeout) { 
 				this.snakes[i].timeout -= 1;
 			} else {			
-				var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase()
-				next = this.findNewCell(this.snakes[i], moves[move])
-				this.moveToCell(this.snakes[i], next[0], next[1])
-
+				var move = this.snakes[i].move(this.makeMap(this.snakes[i])).toLowerCase();
+				next = this.findNewCell(this.snakes[i], moves[move]);
+				this.moveToCell(this.snakes[i], next[0], next[1]);
 				this.log.push({ grid: _u.shallowCopy(this.grid), "scores": _u.shallowCopy(this.scores) });
 			}
 		}	
 
 		return true;
-	}
+	};
 
 	this.addSnakes = function snakeGameAddSnakes () {
 		_u.shuffleArray(this.bots);
 
 		for (var i = 0; i < this.bots.length; i++) {
 			var newSnake = new Snake(this.bots[i].move, String.fromCharCode(97+i));
+
+			this.colors[newSnake.letter] = this.bots[i].color;
+			this.colors[newSnake.letter.toUpperCase()] = darken(this.bots[i].color);
+
 			newSnake.name = this.bots[i].name;
 			newSnake.timeout = 0;
 			newSnake.score = 0;
@@ -332,23 +334,23 @@ module.exports = function SnakeGame (bots)
 				this.grid[start][start+j] = newSnake.letter;
 			}
 
-			this.grid[newSnake.head.row][newSnake.head.col] = newSnake.letter.toUpperCase()
+			this.grid[newSnake.head.row][newSnake.head.col] = newSnake.letter.toUpperCase();
 
-			this.snakes.push(newSnake)
+			this.snakes.push(newSnake);
 			this.scores[newSnake.name+" "+newSnake.letter] = this.snakes[this.snakes.length-1].score;
-		};
+		}
 	};
 
 	this.lastFrame = function snakeGameLastFrame () {
 		return this.log[this.log.length - 1];
-	}
+	};
 
 	this.writeLog = function snakeGameWriteLog () {
 		var output = "var log = " + JSON.stringify(log, null, "\t")
 		fs.writeFile("log.js", output, function(err){
-			if(err){ console.log("Error while saving", err)}
+			if(err){ console.log("Error while saving", err)};
 		});
-	}
+	};
 
 	this.makeMap = function snake_game_makeMap (snake)
 	{
@@ -432,7 +434,6 @@ module.exports = function SnakeGame (bots)
 		if(!deltas){
 			return this.getDefaultMove(snake);
 		}
-
 		next = [_u.mod(snake.head.row + deltas[0], this.gridSize), _u.mod(snake.head.col + deltas[1], this.gridSize)];
 
 		if (next[0] === snake.head.next.row && next[1] === snake.head.next.col) {
@@ -443,92 +444,72 @@ module.exports = function SnakeGame (bots)
 		}
 	};
 
-}
+	function darken (color) {
+		/*
+			Look at http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 
-// function play_many_games(number_of_games){
-// 	if(!number_of_games){ number_of_games = 100 }
-	
-// 	running_totals = {}
+			I've got little clue what's going on here, but it's working
+		*/
+		var rgbString = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+		var rgb = {
+			r: parseInt(rgbString[1], 16),
+			g: parseInt(rgbString[2], 16),
+			b: parseInt(rgbString[3], 16)
+		};
 
-// 	for(var i = 0; i < this.bots.length; i++){
-// 		running_totals[this.bots[i].name] = 0
-// 	}
+		for (var key in rgb) {
+			rgb[key] -= 60;  // Darken
+			if (rgb[key] < 0) {
+				rgb[key] = 0;
+			}
+		}
 
-// 	for(var games = 0; games < 100; games++){
-// 		var scores = snakes(this.bots)
-// 		for(var bot in scores){
-// 			running_totals[bot.slice(0,-2)] += scores[bot]
-// 		}
-// 	}
-
-// 	return running_totals
-// }
+		console.log(rgb);	
+		return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+	}
+};
 
 // Bots go here
 function random_snake(){
-	return "NEWS"[Math.floor(Math.random()*4)] 
+	return "NEWS"[Math.floor(Math.random()*4)];
 }
 
 
 
 function diagonal(){
-	this.last_north = !this.last_north
+	this.last_north = !this.last_north;
 	if(this.last_north){
 		if (Math.random() < 0.5) {
 			return "s";
 		}
-		return "e"
+		return "e";
 	} else {
-		return "n"
+		return "n";
 	}
 }
 
 function spiral(){
 	// This could lead to excellence, or serious injury
 	// https://www.youtube.com/watch?v=2aeOBZ7gVPY
-	if(!this.dir_index){ this.dir_index = 1 }
-	if(!this.side_length){ this.side_length = 3}
-	if(!this.counter){ 
-		this.counter = Math.ceil(this.side_length/this.length)
-		this.side_length++
+	if (!this.dir_index) { this.dir_index = 1 };
+	if (!this.side_length) { this.side_length = 3};
+	if (!this.counter) { 
+		this.counter = Math.ceil(this.side_length/this.length);
+		this.side_length++;
 	} else {
-		this.counter--
+		this.counter--;
 	}
 	
-	dirs = ["e", "n", "w", "s"]
+	dirs = ["e", "n", "w", "s"];
 
-	return dirs[this.side_length % 4]
+	return dirs[this.side_length % 4];
 }
 
-function apple_turnover(){
+function apple_turnover () {
 	// Turns every time it eats an apple
-	dirs = ["e", "s", "w", "n"]
-	return dirs[this.score % 4]
+	dirs = ["e", "s", "w", "n"];
+	return dirs[this.score % 4];
 }
-
-
-
-
-
-// console.log(play_many_games(bots))
-
-/* Snake import test
-var my_snake = new Snake()
-
-my_snake.addHead(0,1)
-my_snake.addTail(1,1)
-my_snake.addTail(2,1)
-my_snake.addHead(0,0)
-
-console.log(my_snake.is_valid())
-console.log(my_snake.print())
-
-my_snake.removeTail()
-my_snake.removeHead()
-
-console.log(my_snake.is_valid())
-console.log(my_snake.print())
-*/ 
 
 },{"./snake.js":9,"./utilities":12,"fs":19}],5:[function(require,module,exports){
 var angular = require("angular");
@@ -709,6 +690,16 @@ function SnakeFactory ($http) {
         factory.current.color = null;
         factory.current.name = null;
         return factory.current;
+    };
+    factory.star = function (snake, callback) {
+        $http({
+            method: "POST",
+            url: "/snakes/star",
+            data: { snakeId: snake._id }
+        }).then(function (res) {
+            snake.stars = res.data.stars;
+            // callback?
+        });
     };
     factory.save = function (snake, callback) {
         $http({
@@ -983,6 +974,10 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     $scope.snakes = [];
     $scope.mySnakes = [];
 
+    User.whoAmI(function (me) {
+        $scope.me = User.me;
+    });
+
     $scope.$parent.setCurrentTab("snakes");
 
     Snake.index(function (snakes) {
@@ -1004,6 +999,10 @@ function SnakesController (Snake, User, Arena, $scope, $location)
         Snake.current = snake;
         $location.url("/editor");
     };
+    $scope.star = function (snake)
+    {
+        Snake.star(snake);
+    };
     $scope.select = function (snake)
     {
         var idx = $scope.selected.indexOf(snake);
@@ -1020,6 +1019,9 @@ function UserFactory ($http) {
     var factory = {};
     factory.me = null;
     factory.whoAmI = function (callback) {
+        if (factory.me) {
+            return callback(factory.me);
+        }
         $http({
             method: "GET",
             url: "/me"
@@ -1041,7 +1043,6 @@ function UserFactory ($http) {
             url: "/login",
             data: data
         }).then(function (res) {
-            console.log("RES:", res);
             factory.me = res.data.user;
             callback(null, res.data.user);
         }).catch(function (res) {

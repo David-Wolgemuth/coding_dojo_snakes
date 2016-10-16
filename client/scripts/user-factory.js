@@ -3,6 +3,9 @@ function UserFactory ($http) {
     var factory = {};
     factory.me = null;
     factory.whoAmI = function (callback) {
+        if (factory.me) {
+            return callback(factory.me);
+        }
         $http({
             method: "GET",
             url: "/me"
@@ -24,7 +27,6 @@ function UserFactory ($http) {
             url: "/login",
             data: data
         }).then(function (res) {
-            console.log("RES:", res);
             factory.me = res.data.user;
             callback(null, res.data.user);
         }).catch(function (res) {

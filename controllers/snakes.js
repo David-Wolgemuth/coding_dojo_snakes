@@ -59,6 +59,36 @@ module.exports = (function Snakes ()
             }
         });
     };
+    controller.star = function (req, res)
+    {
+        console.log(req.body);
+        Snake.findOne({ _id: req.body.snakeId }, function (err, snake) {
+            if (err) {
+                console.log("snakes.star", err);
+                return res.status(500).json({ message: err });
+            }
+            if (!snake) {
+                console.log("snakes.star NOT FOUND");
+                return res.status(404).json({ message: "Snake Not Found" });
+            }
+            var idx = snake.stars.indexOf(req.session.userId);
+            var message;
+            if (idx < 0) {
+                snake.stars.push(req.session.userId);
+                message = "Starred Snake";
+            } else {
+                snake.stars.splice(idx, 1);
+                message = "Unstarred Snake";
+            }
+            snake.save(function (err) {
+                if (err) {
+                    console.log("snakes.star", err);
+                    return res.status(500).json({ message: err });
+                }
+                res.json({ message: message, stars: snake.stars });
+            });
+        });
+    };
     controller.update = function (req, res)
     {
         if (req.session.userId !== req.body._user) {

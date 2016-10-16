@@ -12,14 +12,9 @@ module.exports = function (router)
     .post("/editorSettings", Sessions.saveEditorSettings)
     .post("/login", Sessions.login)
     .get("/logout", Sessions.logout)
-    // .get("/users", Users.index)
-    // .get("/users/new", Users.new)
-    // .get("/users/:id", Users.show)
     .post("/users", Users.create)
     .get("/snakes", Snakes.index)
     .post("/snakes", Snakes.create)
-    .put("/snakes/:id", Snakes.update)
-    // .get("/users/edit/:id", Users.edit)
-    // .put("/users/:id", Users.update)
-    // .delete("/users/:id", Users.delete);
+    .post("/snakes/star", Snakes.star)
+    .put("/snakes/:id", Snakes.update);
 };

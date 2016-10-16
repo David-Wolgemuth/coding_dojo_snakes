@@ -6,6 +6,10 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     $scope.snakes = [];
     $scope.mySnakes = [];
 
+    User.whoAmI(function (me) {
+        $scope.me = User.me;
+    });
+
     $scope.$parent.setCurrentTab("snakes");
 
     Snake.index(function (snakes) {
@@ -26,6 +30,10 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     {
         Snake.current = snake;
         $location.url("/editor");
+    };
+    $scope.star = function (snake)
+    {
+        Snake.star(snake);
     };
     $scope.select = function (snake)
     {

@@ -83,6 +83,16 @@ function SnakeFactory ($http) {
         factory.current.name = null;
         return factory.current;
     };
+    factory.star = function (snake, callback) {
+        $http({
+            method: "POST",
+            url: "/snakes/star",
+            data: { snakeId: snake._id }
+        }).then(function (res) {
+            snake.stars = res.data.stars;
+            // callback?
+        });
+    };
     factory.save = function (snake, callback) {
         $http({
             method: "POST",
