@@ -18,7 +18,7 @@
 			</div>
 		</form>
 	</div><hr><br>
-	<ui-codemirror id="editor" ng-model="snakeCode.content" ui-codemirror-opts="editorOptions"></ui-codemirror>
+	<ui-codemirror id="editor" ng-model="snake.content" ui-codemirror-opts="editorOptions"></ui-codemirror>
 
 	<br><hr>
 
@@ -44,7 +44,7 @@
 			</div>
 			<hr>
 			<div>
-				<button class="btn btn-default" ng-click="testSnake(snakeCode.content)">Run Snake in Test Arena</button>
+				<button class="btn btn-default" ng-click="testSnake(snake.content)">Run Snake in Test Arena</button>
 				<input class="btn btn-default" ng-click="saveSnake(snake)" type="submit" value="Save">
 			</div>
 		</form>

@@ -1,5 +1,6 @@
 
 var Users = require("../controllers/users.js");
+var Snakes = require("../controllers/snakes.js");
 var Sessions = require("../controllers/sessions.js");
 
 module.exports = function (router) 
@@ -15,6 +16,9 @@ module.exports = function (router)
     // .get("/users/new", Users.new)
     // .get("/users/:id", Users.show)
     .post("/users", Users.create)
+    .get("/snakes", Snakes.index)
+    .post("/snakes", Snakes.create)
+    .put("/snakes/:id", Snakes.update)
     // .get("/users/edit/:id", Users.edit)
     // .put("/users/:id", Users.update)
     // .delete("/users/:id", Users.delete);
