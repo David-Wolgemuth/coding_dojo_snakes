@@ -40,26 +40,31 @@ module.exports = (function Snakes ()
                 message: "User Not Logged In"
             });
         }
-        var snake = new Snake({
-            _user: req.session.userId,
-            name: req.body.name,
-            color: req.body.color,
-            content: req.body.content,
-            private: req.body.private
-        });
-        snake.save(function (err) {
-            if (err) {
-                console.log("snakes.create:", err);
-                res.status(400).json({
-                    message: err
-                });
-            } else {
-                res.json({
-                    message: "Successfully Created Snake",
-                    snake: snake
-                });
-            }
-        });
+        User.findOne({ _id: req.session.userId }, function (err, user) {
+            var snake = new Snake({
+                _user: req.session.userId,
+                name: req.body.name,
+                color: req.body.color,
+                content: req.body.content,
+                private: req.body.private
+            });
+            snake.save(function (err) {
+                if (err) {
+                    console.log("snakes.create:", err);
+                    res.status(400).json({
+                        message: err
+                    });
+                } else {
+                    user.snakes.push(snake._id);
+                    user.save(function (err) {
+                        res.json({
+                            message: "Successfully Created Snake",
+                            snake: snake
+                        });
+                    })
+                }
+            });
+        })
     };
     controller.star = function (req, res)
     {

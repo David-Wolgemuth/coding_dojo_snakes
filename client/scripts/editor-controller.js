@@ -1,5 +1,12 @@
 module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
 function EditorController (Snake, User, Arena, $scope, $location) {
+
+    User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
+    });
+
     $scope.$parent.setCurrentTab("editor");
     $scope.editorOptions = {
         mode: "javascript",
@@ -21,7 +28,6 @@ function EditorController (Snake, User, Arena, $scope, $location) {
 
     Snake.getLastEdited(function () {
         $scope.snake = Snake.current;
-        console.log($scope.snake);
     });
 
     Snake.loadEditorSettings()

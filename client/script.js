@@ -1,7 +1,14 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = ["arenaFactory", "snakeFactory", "$scope", "$timeout", "$location", "$routeParams",
-function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParams)
+module.exports = ["arenaFactory", "snakeFactory", "userFactory", "$scope", "$timeout", "$location", "$routeParams",
+function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $routeParams)
 {
+
+    User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
+    });
+
     $scope.$parent.setCurrentTab("arena");
     $scope.timeInterval = 62;
 
@@ -148,6 +155,13 @@ function makeSafeScript (snake, consoleLog) {
 },{"./game":4,"vm":22}],3:[function(require,module,exports){
 module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
 function EditorController (Snake, User, Arena, $scope, $location) {
+
+    User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
+    });
+
     $scope.$parent.setCurrentTab("editor");
     $scope.editorOptions = {
         mode: "javascript",
@@ -169,7 +183,6 @@ function EditorController (Snake, User, Arena, $scope, $location) {
 
     Snake.getLastEdited(function () {
         $scope.snake = Snake.current;
-        console.log($scope.snake);
     });
 
     Snake.loadEditorSettings()
@@ -533,8 +546,11 @@ snakeAppModule.config(function ($routeProvider) {
     $routeProvider.when("/docs", {
         templateUrl: "views/docs.html"
     });
-    $routeProvider.when("/", {
+    $routeProvider.when("/login", {
         templateUrl: "views/landing-page.html"
+    });
+    $routeProvider.when("/", {
+        templateUrl: "views/snakes.html"
     });
 })
 .factory("userFactory", require("./user-factory"))
@@ -550,29 +566,16 @@ snakeAppModule.config(function ($routeProvider) {
 });
 
 },{"./arena-controller":1,"./arena-factory":2,"./editor-controller":3,"./landing-controller":6,"./master-controller":7,"./snake-factory":8,"./snakes-controller":10,"./user-factory":11,"angular":17,"angular-route":14,"angular-ui-codemirror":15,"angularjs-color-picker":18}],6:[function(require,module,exports){
-module.exports = ["userFactory", "$scope", "$window",
-function LandingController (User, $scope, $window) {
+module.exports = ["userFactory", "$scope", "$window", "$location",
+function LandingController (User, $scope, $window, $location) {
     $scope.$parent.setCurrentTab("");
 
     $scope.error = null;
     $scope.signedInUser = User.me;
-    console.log($scope.signedInUser);
-    if (!$scope.signedInUser) {
-        User.whoAmI(function (me) {
-            $scope.signedInUser = me;
-        });
+    if ($scope.signedInUser) {
+        $location.url("/snakes");
     } 
 
-    $scope.login = function (user) {
-        User.login(user, function (err, loggedInUser) {
-            if (err) {
-                $scope.error = err;
-            } else {
-                $scope.signedInUser = loggedInUser;
-                console.log("SIGNED IN:", $scope.signedInUser);
-            }
-        });
-    };
     $scope.register = function (user) {
         console.log(user);
         User.register(user, function (err, loggedInUser) {
@@ -583,26 +586,35 @@ function LandingController (User, $scope, $window) {
             }
         });
     };
-    $scope.signOut = function () {
-        User.signOut(function (err) {
-            if (err) {
-                console.log(err);
-            } else {
-                $scope.signedInUser = null;
-                $window.location.href = "/";
-            }
-        });
-    };
 }];
 },{}],7:[function(require,module,exports){
-module.exports = ["$scope", "$location",
-function MasterController ($scope, $location) {
+module.exports = ["userFactory", "$scope", "$location",
+function MasterController (User, $scope, $location) {
+    User.whoAmI(function (me) {
+        $scope.me = me;
+    });
+    $scope.signOut = function () {
+        User.signOut(function () {
+            $scope.me = null;
+            $location.url("/login");
+        });
+    };
     $scope.setCurrentTab = function (tab) {
         $scope.currentTab = tab;
     };
     $scope.goToTab = function (tab) {
         $scope.currentTab = tab;
         $location.url("/" + tab);
+    };
+    $scope.login = function (user) {
+        User.login(user, function (err, loggedInUser) {
+            if (err) {
+                $scope.error = err;
+            } else {
+                $scope.me = loggedInUser;
+                $location.url("/snakes");
+            }
+        });
     };
 }];
 },{}],8:[function(require,module,exports){
@@ -989,6 +1001,9 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     $scope.selected = [];
 
     User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
         $scope.me = User.me;
     });
 
@@ -1025,6 +1040,14 @@ function SnakesController (Snake, User, Arena, $scope, $location)
             $scope.mySnakes.splice($scope.mySnakes.indexOf(snake), 1);
         });
     };
+    $scope.viewUser = function (user)
+    {
+        if ($scope.selectedUser === user) {
+            $scope.selectedUser = null;
+        } else {
+            $scope.selectedUser = user;
+        }
+    };
     $scope.select = function (snake)
     {
         var idx = $scope.selected.indexOf(snake);
@@ -1048,7 +1071,6 @@ function UserFactory ($http) {
             method: "GET",
             url: "/me"
         }).then(function (res) {
-            console.log(res);
             if (res.data.user) {
                 factory.me = res.data.user;
                 callback(factory.me);
@@ -1056,7 +1078,7 @@ function UserFactory ($http) {
                 factory.me = null;
                 callback(null);
             }
-        }).catch(function () { callback(null); });
+        }).catch(function () { console.log(err); callback(null); });
     };
     factory.whoAmI(function () {});
     factory.login = function (data, callback) {
@@ -1081,7 +1103,7 @@ function UserFactory ($http) {
             factory.me = null;
             callback();
         }).catch(function (res) {
-            callback(res);
+            console.log("NEVER LOGGED OUT");
         });
     };
     factory.register = function (data, callback) {

@@ -7,6 +7,9 @@ function SnakesController (Snake, User, Arena, $scope, $location)
     $scope.selected = [];
 
     User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
         $scope.me = User.me;
     });
 
@@ -42,6 +45,14 @@ function SnakesController (Snake, User, Arena, $scope, $location)
         Snake.delete(snake, function () {
             $scope.mySnakes.splice($scope.mySnakes.indexOf(snake), 1);
         });
+    };
+    $scope.viewUser = function (user)
+    {
+        if ($scope.selectedUser === user) {
+            $scope.selectedUser = null;
+        } else {
+            $scope.selectedUser = user;
+        }
     };
     $scope.select = function (snake)
     {

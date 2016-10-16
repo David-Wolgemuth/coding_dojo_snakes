@@ -5,7 +5,7 @@
 		<div>
 			<p>Visit <a href="#/snakes">Snakes Page</a> to create new match.</p>
 			<p>Visit <a href="#/editor">Editor Page</a> to create new snake.</p>
-			<button class="btn btn-default" ng-click="togglePause()"><span ng-class="(paused) ? 'glyphicon-play' : 'glyphicon-pause'" class="glyphicon"></span></button>
+			<button ng-if="game" class="btn btn-default" ng-click="togglePause()"><span ng-class="(paused) ? 'glyphicon-play' : 'glyphicon-pause'" class="glyphicon"></span></button>
 		</div>
 		<div class="col-sm-10 col-sm-offset-1">
 			<div class="outer">
@@ -24,7 +24,7 @@
 				</p>	
 			</div>
 		</div>
-		<button ng-click="consoleVisible=!consoleVisible" ng-bind="(consoleVisible) ? 'Hide Console' : 'Show Console'"></button>
+		<button ng-if="game" ng-click="consoleVisible=!consoleVisible" ng-bind="(consoleVisible) ? 'Hide Console' : 'Show Console'"></button>
 		<div ng-if="consoleVisible">
 			<p ng-repeat="log in game.consoleLog | orderBy: '-'">
 				<span style="background-color: {{ log.snake.color }}">____</span>

@@ -10,7 +10,6 @@ function UserFactory ($http) {
             method: "GET",
             url: "/me"
         }).then(function (res) {
-            console.log(res);
             if (res.data.user) {
                 factory.me = res.data.user;
                 callback(factory.me);
@@ -18,7 +17,7 @@ function UserFactory ($http) {
                 factory.me = null;
                 callback(null);
             }
-        }).catch(function () { callback(null); });
+        }).catch(function () { console.log(err); callback(null); });
     };
     factory.whoAmI(function () {});
     factory.login = function (data, callback) {
@@ -43,7 +42,7 @@ function UserFactory ($http) {
             factory.me = null;
             callback();
         }).catch(function (res) {
-            callback(res);
+            console.log("NEVER LOGGED OUT");
         });
     };
     factory.register = function (data, callback) {

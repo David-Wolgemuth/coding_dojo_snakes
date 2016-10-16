@@ -58,7 +58,12 @@
 		<tbody>
 			<tr ng-repeat="snake in snakes" ng-class="(selected.indexOf(snake) >= 0) ? 'info' : ''">
 				<td style="background-color: {{ snake.color }}" ng-click="select(snake)" class="colorClick"></td>
-				<td ng-bind="snake._user.username"></td>
+				<td>
+					<a href ng-click="viewUser(snake._user)" ng-bind="snake._user.username"></a>
+					<div ng-if="selectedUser == snake._user">
+						<p>Snakes: <span ng-bind="snake._user.snakes.length"></span></p>
+					</div>
+				</td>
 				<td ng-bind="snake.name"></td>
 				<td ng-bind="snake.updatedAt | date : 'EEE M/d/y' "></td>
 				<td ng-bind="snake.stars.length"></td>

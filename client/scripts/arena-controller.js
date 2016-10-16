@@ -1,6 +1,13 @@
-module.exports = ["arenaFactory", "snakeFactory", "$scope", "$timeout", "$location", "$routeParams",
-function ArenaController (Arena, Snake, $scope, $timeout, $location, $routeParams)
+module.exports = ["arenaFactory", "snakeFactory", "userFactory", "$scope", "$timeout", "$location", "$routeParams",
+function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $routeParams)
 {
+
+    User.whoAmI(function (me) {
+        if (!me) {
+            $location.url("/login");
+        }
+    });
+
     $scope.$parent.setCurrentTab("arena");
     $scope.timeInterval = 62;
 

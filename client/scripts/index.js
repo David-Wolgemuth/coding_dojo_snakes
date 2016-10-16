@@ -19,8 +19,11 @@ snakeAppModule.config(function ($routeProvider) {
     $routeProvider.when("/docs", {
         templateUrl: "views/docs.html"
     });
-    $routeProvider.when("/", {
+    $routeProvider.when("/login", {
         templateUrl: "views/landing-page.html"
+    });
+    $routeProvider.when("/", {
+        templateUrl: "views/snakes.html"
     });
 })
 .factory("userFactory", require("./user-factory"))
