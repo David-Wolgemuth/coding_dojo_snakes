@@ -95,27 +95,27 @@ module.exports = function Snake (move_function, letter) {
 	}
 
 	this.is_valid = function(){
-		if(!this.head && !this.tail){
-			return true
-		} else if(!this.head || !this.tail) {
-			return false
-		} else if(this.head.prev || this.tail.next){
-			return false
+		if (!this.head && !this.tail) {
+			return true;
+		} else if (!this.head || !this.tail) {
+			return false;
+		} else if (this.head.prev || this.tail.next) {
+			return false;
 		}
 
-		var runner = this.head
-		var count = 1
+		var runner = this.head;
+		var count = 1;
 
-		while(runner.next){
-			if(runner.next.prev != runner){
-				return false
+		while (runner.next) {
+			if (runner.next.prev != runner) {
+				return false;
 			}
-			runner = runner.next
-			count ++
+			runner = runner.next;
+			count ++;
 		}
 
-		return runner==this.tail&&count==this.length
-	}
+		return (runner === this.tail && count === this.length);
+	};
 
 	this.print = function(){
 		if(!this.is_valid){
@@ -142,13 +142,13 @@ function UserSnake (snake, map) {
 	this.letter = snake.letter;
 	this.map = map;
 	this.saved = snake.saved;
-	this.head = function () {
+	this.getHeadCoords = function () {
 		return snake.head.coords();
-	}
-	this.tail = function () {
+	};
+	this.getTailCoords = function () {
 		return snake.tail.coords();
-	}
-	var dirMethods = ["Forward", "Back", "Left", "Right"];
+	};
+	var dirMethods = ["Forward", "Left", "Right"];
 	for (var i = 0; i < dirMethods.length; i++) {
 		// this.forwardTile = function () { using "f" as direction }
 		this["get" + dirMethods[i] + "Tile"] = makeDirectionalMethod(dirMethods[i][0].toLowerCase());
@@ -156,59 +156,60 @@ function UserSnake (snake, map) {
 	function makeDirectionalMethod (dir) {
 		return function () {
 			return new Tile (snake, this.map, dir);
-		}
+		};
 	}
 }
 
-
-function Tile (snake, map, relativeDirection) {
+function Tile (snake, map, relativeDirection)
+{
 	this.rdir 	= relativeDirection;
 	this.cdir 	= "?";
 	this.row  	= 0;
 	this.col 	= 0;
 	this.letter = "?";
-	this.init(snake, map)
+	this.init(snake, map);
 }
-Tile.prototype.init = function (snake, map) {
+
+Tile.prototype.init = function (snake, map)
+{
 	var forwardDelta = determineForwardDelta(snake);
 	var delta = determineDeltaFromRelative (forwardDelta, this.rdir);
 
 	this.cdir = determineCardinalDirectionFromDelta(delta);
 	this.row  = snake.head.row + delta.row;
 	this.col  = snake.head.col + delta.col;
-}
+};
 
-function determineForwardDelta (snake) {
-	return { 
+function determineForwardDelta (snake)
+{
+	var d = { 
 		row: snake.head.next.row - snake.head.row,
 		col: snake.head.next.col - snake.head.col 
 	};
+	console.log(d);
+	return d;
 }
-function determineDeltaFromRelative (forwardDelta, rdir) {
-	if (rdir === "l" || rdir === "r") {
-		var row, col;
-		var neg = (rdir === "l") ? -1 : 1;
-		if (forwardDelta.row) {
-			col = forwardDelta.row * neg;
-			row = 0;
-		} else {
-			col = 0;
-			row = -forwardDelta.col * neg;
-		}
-		return { row: row, col: col };
-	} else {
-		switch (rdir) {
-			case "f":
-				return forwardDelta;
-			case "b":
-				return { row: -forwardDelta.row, col: -forwardDelta.col };
-			default:
-				return "?";
-		}
+
+function determineDeltaFromRelative (forwardDelta, rdir)
+{
+	// Rotate the delta based on relative direction
+	var row = forwardDelta.row;
+	var col = forwardDelta.col;
+	switch (rdir) {
+		case "f":
+			// Same
+			return forwardDelta;
+		case "l":
+			return { row: col, col: -row };
+		case "r":
+			return { row: -col, col: row };
+		default:
+			return "?";
 	}
 }
 
-function determineCardinalDirectionFromDelta (delta) {
+function determineCardinalDirectionFromDelta (delta)
+{
 	if (typeof delta.row !== "number" || typeof delta.col !== "number") {
 		return "?";
 	}
@@ -218,13 +219,16 @@ function determineCardinalDirectionFromDelta (delta) {
 	return (delta.row > 0) ? "s" : "n";
 }
 
+function SnakeNode(row, col)
+{
+	this.row = row;
+	this.col = col;
+	this.next = null;
+	this.prev = null;
+}
 
-function SnakeNode(row, col){
-	this.row = row
-	this.col = col
-	this.next = null
-	this.prev = null
-}
-SnakeNode.prototype.coords = function () {
+SnakeNode.prototype.coords = function ()
+{
+	// Safe getter for coords
 	return { row: this.row, col: this.col };
-}
+};

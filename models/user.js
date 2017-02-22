@@ -5,8 +5,10 @@ var bcrypt = require("mongoose-bcrypt");
 var UserSchema = new mongoose.Schema({
     email: { 
         type: String,
-        required: false,
-        index: { unique: true },
+        trim: true,
+        sparse: true,  // Allows to be null
+        unique: true,
+        index: true,
         validate: [validate.email, "Invalid Email Address"]
     },
     username: {

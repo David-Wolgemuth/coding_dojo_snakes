@@ -10,6 +10,7 @@ function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $rout
 
     $scope.$parent.setCurrentTab("arena");
     $scope.timeInterval = 62;
+    $scope.consoleVisible = true;
 
     $scope.testingSnake = !!$routeParams["test-snake"];
     $scope.paused = true;
@@ -33,9 +34,8 @@ function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $rout
             return;
         }
         if ($scope.game.runFrame()) {
-            console.log($scope.curr_frame);
-            console.log($scope.game.scores);
             $scope.curr_frame = $scope.game.lastFrame();
+            console.log($scope.game.consoleLog);
             $timeout(runFrame, $scope.timeInterval);
         }
     }

@@ -1,5 +1,5 @@
-module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
-function EditorController (Snake, User, Arena, $scope, $location) {
+module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location", "$timeout",
+function EditorController (Snake, User, Arena, $scope, $location, $timeout) {
 
     User.whoAmI(function (me) {
         if (!me) {
@@ -54,6 +54,10 @@ function EditorController (Snake, User, Arena, $scope, $location) {
     };
     $scope.testSnake = function ()
     {
+        $scope.snake.color = extractColor($scope.snake.color);
+        if (!$scope.snake.color) {
+            return $scope.error = "Color Required";
+        }
         Snake.saveEditorSettings($scope.editorOptions);
         Arena.makeNewTest($scope.snake);
         $location.url("/arena");
@@ -61,9 +65,10 @@ function EditorController (Snake, User, Arena, $scope, $location) {
     $scope.saveSnake = function (snake, saveAsNew)
     {
         if (!User.me) {
-            console.log("NOT LOGGED IN");
-            $scope.error = "Not Logged In";
-            return;
+            return $scope.error = "Not Logged In";
+        }
+        if (!snake.name) {
+            return $scope.error = "Please Name Your Snake!";
         }
 
         if (saveAsNew) {
@@ -78,29 +83,48 @@ function EditorController (Snake, User, Arena, $scope, $location) {
             snake = copy;
         }
 
-        console.log(snake);
-
         if (snake._id) {
-            console.log("UPDATING");
             Snake.update(snake, function () {
-
+                $scope.error = "";
+                $scope.message = "Successfully Saved Snake!";
+                $timeout(() => $scope.message = "", 2000);
             });
             return;
         }
 
         snake.userId = User.me._id;
+        snake.color = extractColor(snake.color);
+        if (!snake.color) {
+            return $scope.error = "Color Required";
+        }
+
         Snake.save(snake, function (err, newSnake) {
             $scope.snake = newSnake;
             if (err) {
                 $scope.error = err;
                 return;
             }
-            console.log("Saved:", newSnake);
+            $scope.error = "";
+            $scope.message = "Created New Snake!";
+            $timeout(() => $scope.message = "", 2000);
         });
     };
     $scope.reset = function (hard)
     {
+        $scope.error = "";
+        $scope.message = "Blank Slate!";
+        $timeout(() => $scope.message = "", 2000);
         $scope.snake = Snake.reset(hard);
     };
     $scope.colorThemes = ["3024-day", "3024-night", "abcdef", "ambiance-mobile", "ambiance", "base16-dark", "base16-light", "bespin", "blackboard", "cobalt", "colorforth", "dracula", "eclipse", "elegant", "erlang-dark", "hopscotch", "icecoder", "isotope", "lesser-dark", "liquibyte", "material", "mbo", "mdn-like", "midnight", "monokai", "neat", "neo", "night", "panda-syntax", "paraiso-dark", "paraiso-light", "pastel-on-dark", "railscasts", "rubyblue", "seti", "solarized", "the-matrix", "tomorrow-night-bright", "tomorrow-night-eighties", "ttcn", "twilight", "vibrant-ink", "xq-dark", "xq-light", "yeti", "zenburn"];
+    function extractColor (color)
+    {
+        console.log(color);
+        var found = /(#[0-9a-f]{6})/.exec(color.toLowerCase());
+        console.log(found);
+        if (found) {
+            return found[0];
+        }
+        return null;
+    }
 }];

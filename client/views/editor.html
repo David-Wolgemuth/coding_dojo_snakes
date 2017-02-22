@@ -19,6 +19,15 @@
 		</form>
 	</div><hr><br>
 	<h2 ng-bind="snake.name"></h2>
+	<pre><code>
+function chooseDirection (snake, map, utils) {
+	/*
+		Your Code Goes Here
+
+		Return cardinal direction ("n", "e", "s", "w", or "?")
+	*/
+}
+</code></pre>
 	<ui-codemirror id="editor" ng-model="snake.content" ui-codemirror-opts="editorOptions"></ui-codemirror>
 
 	<br><hr>
@@ -34,12 +43,6 @@
 			</div>
 
 			<div>
-				<label for="privateSnake">Private</label>
-				<input id="privateSnake" type="checkbox" ng-model="snake.private">	
-				<i>Other Users Will Not Be Able To Battle</i>
-			</div>
-
-			<div>
 				<label for="color-picker">Color</label>
 				<color-picker required="required" id="color-picker" options="{ format: 'hex' }" ng-model="snake.color"></color-picker>
 			</div>
@@ -52,6 +55,14 @@
 				<input class="btn btn-danger" ng-click="reset(false)" type="button" value="Reset">
 			</div>
 		</form>
+		<div ng-if="error" class="alert alert-danger">
+			<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+			<span class="sr-only">Error: </span>{{ error }}
+		</div>
+		<div ng-if="message" class="alert alert-success">
+			<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span>
+			<span class="sr-only">Message: </span>{{ message }}
+		</div>
 	</div>
 
 </div>

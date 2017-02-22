@@ -5,6 +5,7 @@ function ArenaFactory () {
     var factory = {};
 
     factory.makeNewTest = function (snake) {
+        console.log("SNAKE:", snake);
         var simpleSnake = `\n
             snake.saved.num = snake.saved.num || 1;
             if (snake.saved.num > 8) {
@@ -22,12 +23,12 @@ function ArenaFactory () {
             return t.cdir
         \n`;
         var snakeBots = [
-            { content: simpleSnake, name: "TEST_BOT_9000" },
+            { content: simpleSnake, name: "TEST_BOT_9000", color: "#a1a1a1" },
             snake
         ];
-        factory.makeNewGame(snakeBots);
+        factory.makeNewGame(snakeBots, true);
     };
-    factory.makeNewGame = function (snakes) {
+    factory.makeNewGame = function (snakes, testing) {
         var bots = [];
         var consoleLog = [];  // This is where snakes print to
         for (var i = 0; i < snakes.length; i++) {
@@ -39,6 +40,7 @@ function ArenaFactory () {
         }
         factory.game = new SnakeGame(bots, true);
         factory.game.consoleLog = consoleLog;
+        factory.game.testing = testing || false;
         factory.game.setup();
         console.log(factory.game);
         return factory.game;
@@ -57,7 +59,7 @@ function makeSafeScript (snake, consoleLog) {
     for (var i = 0; i < globals.length; i++) {
         nullify += `var ${globals[i]}=null;`;
     }
-    var scriptStart = "\n\nfunction getMove (snake, map, utils) { var window=null; var global=null;";
+    var scriptStart = "\n\nfunction getMove (snake, map, utils) { var window=null;";
     var scriptEnd = "\n}\ngetMove.call(snake, snake, map, utils);";
 
     var scriptCode = nullify + scriptStart + snake.content + scriptEnd;
@@ -69,7 +71,7 @@ function makeSafeScript (snake, consoleLog) {
             consoleLog.push(args);
         },
         mod: function (a, b) {
-            return ( ( a%b ) + b) % b;
+            return (( a % b ) + b) % b;
         },
         rand: function () {
             return Math.random();

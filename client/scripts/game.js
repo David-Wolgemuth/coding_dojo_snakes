@@ -1,11 +1,11 @@
 
-var fs = require("fs");
 var Snake = require("./snake.js");
-var _u = require("./utilities")();
+var _u = require("./utilities");
 
 module.exports = function SnakeGame (bots)
 {
 	this.bots = bots;
+	this.testing = false;
 	this.startingLength = 3;
 	this.gridSize = this.bots.length * 10;
 	this.numberOfApples = Math.pow(this.gridSize, 2) / 4;
@@ -21,8 +21,6 @@ module.exports = function SnakeGame (bots)
 	this.setup = function () {
 
 		this.grid = _u.emptyGrid(this.gridSize, ".");
-
-		
 
 		this.addSnakes();
 
@@ -94,13 +92,6 @@ module.exports = function SnakeGame (bots)
 
 	this.lastFrame = function snakeGameLastFrame () {
 		return this.log[this.log.length - 1];
-	};
-
-	this.writeLog = function snakeGameWriteLog () {
-		var output = "var log = " + JSON.stringify(log, null, "\t")
-		fs.writeFile("log.js", output, function(err){
-			if(err){ console.log("Error while saving", err)};
-		});
 	};
 
 	this.makeMap = function snake_game_makeMap (snake)
@@ -219,45 +210,3 @@ module.exports = function SnakeGame (bots)
 		return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
 	}
 };
-
-// Bots go here
-function random_snake(){
-	return "NEWS"[Math.floor(Math.random()*4)];
-}
-
-
-
-function diagonal(){
-	this.last_north = !this.last_north;
-	if(this.last_north){
-		if (Math.random() < 0.5) {
-			return "s";
-		}
-		return "e";
-	} else {
-		return "n";
-	}
-}
-
-function spiral(){
-	// This could lead to excellence, or serious injury
-	// https://www.youtube.com/watch?v=2aeOBZ7gVPY
-	if (!this.dir_index) { this.dir_index = 1 };
-	if (!this.side_length) { this.side_length = 3};
-	if (!this.counter) { 
-		this.counter = Math.ceil(this.side_length/this.length);
-		this.side_length++;
-	} else {
-		this.counter--;
-	}
-	
-	dirs = ["e", "n", "w", "s"];
-
-	return dirs[this.side_length % 4];
-}
-
-function apple_turnover () {
-	// Turns every time it eats an apple
-	dirs = ["e", "s", "w", "n"];
-	return dirs[this.score % 4];
-}

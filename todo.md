@@ -7,6 +7,7 @@
  - [x] Select Snakes To Send To Arena
  - [x] Star Snakes
  - [x] Delete Snakes
- - [ ] Ensure Login
- - [ ] View Users
+ - [x] Ensure Login
+ - [x] View Users
  - [ ] Follow Users
+ - [ ] Registration / Login Messages

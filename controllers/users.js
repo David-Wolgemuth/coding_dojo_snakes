@@ -8,6 +8,10 @@ module.exports = (function Users ()
     controller.create = function (req, res)
     {
         console.log(req.body);
+        if (req.body.email === "") {
+            // Empty String Messes With Validation
+            delete req.body.email;
+        }
         var user = new User({
             email: req.body.email,
             username: req.body.username,

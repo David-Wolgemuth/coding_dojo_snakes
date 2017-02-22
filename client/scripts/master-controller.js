@@ -6,7 +6,8 @@ function MasterController (User, $scope, $location) {
     $scope.signOut = function () {
         User.signOut(function () {
             $scope.me = null;
-            $location.url("/login");
+            // Trigger Page Refresh
+            document.location.href="/";
         });
     };
     $scope.setCurrentTab = function (tab) {
@@ -16,14 +17,5 @@ function MasterController (User, $scope, $location) {
         $scope.currentTab = tab;
         $location.url("/" + tab);
     };
-    $scope.login = function (user) {
-        User.login(user, function (err, loggedInUser) {
-            if (err) {
-                $scope.error = err;
-            } else {
-                $scope.me = loggedInUser;
-                $location.url("/snakes");
-            }
-        });
-    };
+    
 }];

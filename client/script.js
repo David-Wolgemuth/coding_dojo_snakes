@@ -11,6 +11,7 @@ function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $rout
 
     $scope.$parent.setCurrentTab("arena");
     $scope.timeInterval = 62;
+    $scope.consoleVisible = true;
 
     $scope.testingSnake = !!$routeParams["test-snake"];
     $scope.paused = true;
@@ -34,9 +35,8 @@ function ArenaController (Arena, Snake, User, $scope, $timeout, $location, $rout
             return;
         }
         if ($scope.game.runFrame()) {
-            console.log($scope.curr_frame);
-            console.log($scope.game.scores);
             $scope.curr_frame = $scope.game.lastFrame();
+            console.log($scope.game.consoleLog);
             $timeout(runFrame, $scope.timeInterval);
         }
     }
@@ -56,6 +56,7 @@ function ArenaFactory () {
     var factory = {};
 
     factory.makeNewTest = function (snake) {
+        console.log("SNAKE:", snake);
         var simpleSnake = `\n
             snake.saved.num = snake.saved.num || 1;
             if (snake.saved.num > 8) {
@@ -73,12 +74,12 @@ function ArenaFactory () {
             return t.cdir
         \n`;
         var snakeBots = [
-            { content: simpleSnake, name: "TEST_BOT_9000" },
+            { content: simpleSnake, name: "TEST_BOT_9000", color: "#a1a1a1" },
             snake
         ];
-        factory.makeNewGame(snakeBots);
+        factory.makeNewGame(snakeBots, true);
     };
-    factory.makeNewGame = function (snakes) {
+    factory.makeNewGame = function (snakes, testing) {
         var bots = [];
         var consoleLog = [];  // This is where snakes print to
         for (var i = 0; i < snakes.length; i++) {
@@ -90,6 +91,7 @@ function ArenaFactory () {
         }
         factory.game = new SnakeGame(bots, true);
         factory.game.consoleLog = consoleLog;
+        factory.game.testing = testing || false;
         factory.game.setup();
         console.log(factory.game);
         return factory.game;
@@ -108,7 +110,7 @@ function makeSafeScript (snake, consoleLog) {
     for (var i = 0; i < globals.length; i++) {
         nullify += `var ${globals[i]}=null;`;
     }
-    var scriptStart = "\n\nfunction getMove (snake, map, utils) { var window=null; var global=null;";
+    var scriptStart = "\n\nfunction getMove (snake, map, utils) { var window=null;";
     var scriptEnd = "\n}\ngetMove.call(snake, snake, map, utils);";
 
     var scriptCode = nullify + scriptStart + snake.content + scriptEnd;
@@ -120,7 +122,7 @@ function makeSafeScript (snake, consoleLog) {
             consoleLog.push(args);
         },
         mod: function (a, b) {
-            return ( ( a%b ) + b) % b;
+            return (( a % b ) + b) % b;
         },
         rand: function () {
             return Math.random();
@@ -152,9 +154,9 @@ function makeSafeScript (snake, consoleLog) {
 
     };
 }
-},{"./game":4,"vm":22}],3:[function(require,module,exports){
-module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
-function EditorController (Snake, User, Arena, $scope, $location) {
+},{"./game":4,"vm":21}],3:[function(require,module,exports){
+module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location", "$timeout",
+function EditorController (Snake, User, Arena, $scope, $location, $timeout) {
 
     User.whoAmI(function (me) {
         if (!me) {
@@ -209,6 +211,10 @@ function EditorController (Snake, User, Arena, $scope, $location) {
     };
     $scope.testSnake = function ()
     {
+        $scope.snake.color = extractColor($scope.snake.color);
+        if (!$scope.snake.color) {
+            return $scope.error = "Color Required";
+        }
         Snake.saveEditorSettings($scope.editorOptions);
         Arena.makeNewTest($scope.snake);
         $location.url("/arena");
@@ -216,9 +222,10 @@ function EditorController (Snake, User, Arena, $scope, $location) {
     $scope.saveSnake = function (snake, saveAsNew)
     {
         if (!User.me) {
-            console.log("NOT LOGGED IN");
-            $scope.error = "Not Logged In";
-            return;
+            return $scope.error = "Not Logged In";
+        }
+        if (!snake.name) {
+            return $scope.error = "Please Name Your Snake!";
         }
 
         if (saveAsNew) {
@@ -233,41 +240,60 @@ function EditorController (Snake, User, Arena, $scope, $location) {
             snake = copy;
         }
 
-        console.log(snake);
-
         if (snake._id) {
-            console.log("UPDATING");
             Snake.update(snake, function () {
-
+                $scope.error = "";
+                $scope.message = "Successfully Saved Snake!";
+                $timeout(() => $scope.message = "", 2000);
             });
             return;
         }
 
         snake.userId = User.me._id;
+        snake.color = extractColor(snake.color);
+        if (!snake.color) {
+            return $scope.error = "Color Required";
+        }
+
         Snake.save(snake, function (err, newSnake) {
             $scope.snake = newSnake;
             if (err) {
                 $scope.error = err;
                 return;
             }
-            console.log("Saved:", newSnake);
+            $scope.error = "";
+            $scope.message = "Created New Snake!";
+            $timeout(() => $scope.message = "", 2000);
         });
     };
     $scope.reset = function (hard)
     {
+        $scope.error = "";
+        $scope.message = "Blank Slate!";
+        $timeout(() => $scope.message = "", 2000);
         $scope.snake = Snake.reset(hard);
     };
     $scope.colorThemes = ["3024-day", "3024-night", "abcdef", "ambiance-mobile", "ambiance", "base16-dark", "base16-light", "bespin", "blackboard", "cobalt", "colorforth", "dracula", "eclipse", "elegant", "erlang-dark", "hopscotch", "icecoder", "isotope", "lesser-dark", "liquibyte", "material", "mbo", "mdn-like", "midnight", "monokai", "neat", "neo", "night", "panda-syntax", "paraiso-dark", "paraiso-light", "pastel-on-dark", "railscasts", "rubyblue", "seti", "solarized", "the-matrix", "tomorrow-night-bright", "tomorrow-night-eighties", "ttcn", "twilight", "vibrant-ink", "xq-dark", "xq-light", "yeti", "zenburn"];
+    function extractColor (color)
+    {
+        console.log(color);
+        var found = /(#[0-9a-f]{6})/.exec(color.toLowerCase());
+        console.log(found);
+        if (found) {
+            return found[0];
+        }
+        return null;
+    }
 }];
 },{}],4:[function(require,module,exports){
 
-var fs = require("fs");
 var Snake = require("./snake.js");
-var _u = require("./utilities")();
+var _u = require("./utilities");
 
 module.exports = function SnakeGame (bots)
 {
 	this.bots = bots;
+	this.testing = false;
 	this.startingLength = 3;
 	this.gridSize = this.bots.length * 10;
 	this.numberOfApples = Math.pow(this.gridSize, 2) / 4;
@@ -283,8 +309,6 @@ module.exports = function SnakeGame (bots)
 	this.setup = function () {
 
 		this.grid = _u.emptyGrid(this.gridSize, ".");
-
-		
 
 		this.addSnakes();
 
@@ -356,13 +380,6 @@ module.exports = function SnakeGame (bots)
 
 	this.lastFrame = function snakeGameLastFrame () {
 		return this.log[this.log.length - 1];
-	};
-
-	this.writeLog = function snakeGameWriteLog () {
-		var output = "var log = " + JSON.stringify(log, null, "\t")
-		fs.writeFile("log.js", output, function(err){
-			if(err){ console.log("Error while saving", err)};
-		});
 	};
 
 	this.makeMap = function snake_game_makeMap (snake)
@@ -482,49 +499,7 @@ module.exports = function SnakeGame (bots)
 	}
 };
 
-// Bots go here
-function random_snake(){
-	return "NEWS"[Math.floor(Math.random()*4)];
-}
-
-
-
-function diagonal(){
-	this.last_north = !this.last_north;
-	if(this.last_north){
-		if (Math.random() < 0.5) {
-			return "s";
-		}
-		return "e";
-	} else {
-		return "n";
-	}
-}
-
-function spiral(){
-	// This could lead to excellence, or serious injury
-	// https://www.youtube.com/watch?v=2aeOBZ7gVPY
-	if (!this.dir_index) { this.dir_index = 1 };
-	if (!this.side_length) { this.side_length = 3};
-	if (!this.counter) { 
-		this.counter = Math.ceil(this.side_length/this.length);
-		this.side_length++;
-	} else {
-		this.counter--;
-	}
-	
-	dirs = ["e", "n", "w", "s"];
-
-	return dirs[this.side_length % 4];
-}
-
-function apple_turnover () {
-	// Turns every time it eats an apple
-	dirs = ["e", "s", "w", "n"];
-	return dirs[this.score % 4];
-}
-
-},{"./snake.js":9,"./utilities":12,"fs":19}],5:[function(require,module,exports){
+},{"./snake.js":9,"./utilities":12}],5:[function(require,module,exports){
 var angular = require("angular");
 
 require("angular-route");
@@ -577,12 +552,32 @@ function LandingController (User, $scope, $window, $location) {
     } 
 
     $scope.register = function (user) {
-        console.log(user);
+        if (user.password !== user.confirmPassword) {
+            return $scope.error = "Passwords Do Not Match.";
+        }
         User.register(user, function (err, loggedInUser) {
+            if (err) {
+                if (err.code === 11000) {
+                    var key = err.errmsg.indexOf("username_1") >= 0 ? "Username" : "Email Address";
+                    var value = /"(.+)"/.exec(err.errmsg)[0];
+                    $scope.error = `${key}: ${value} Already Taken`;
+                } else if (err.errors) {
+                    $scope.error = err.errors.email.message;
+                }
+            } else {
+                // Trigger Page Refresh
+                document.location.href="/";
+            }
+        });
+    };
+    $scope.login = function (user) {
+        User.login(user, function (err, loggedInUser) {
+            console.log(err);
             if (err) {
                 $scope.error = err;
             } else {
-                console.log("LOGGED IN", loggedInUser);
+                // Trigger Page Refresh
+                document.location.href="/";
             }
         });
     };
@@ -596,7 +591,8 @@ function MasterController (User, $scope, $location) {
     $scope.signOut = function () {
         User.signOut(function () {
             $scope.me = null;
-            $location.url("/login");
+            // Trigger Page Refresh
+            document.location.href="/";
         });
     };
     $scope.setCurrentTab = function (tab) {
@@ -606,16 +602,7 @@ function MasterController (User, $scope, $location) {
         $scope.currentTab = tab;
         $location.url("/" + tab);
     };
-    $scope.login = function (user) {
-        User.login(user, function (err, loggedInUser) {
-            if (err) {
-                $scope.error = err;
-            } else {
-                $scope.me = loggedInUser;
-                $location.url("/snakes");
-            }
-        });
-    };
+    
 }];
 },{}],8:[function(require,module,exports){
 module.exports = ["$http",
@@ -626,8 +613,6 @@ function SnakeFactory ($http) {
         current: null,
         snakes: []
     };
-
-
     factory.index = function (callback, force)
     {
         if (!force && factory.snakes.length > 0) {
@@ -720,9 +705,9 @@ function SnakeFactory ($http) {
             data: snake
         }).then(function (res) {
             factory.snakes.push(res.data.snake);
-            console.log("Saved Snake:", res.data.snake);
+            callback(null, res.data.snake);
         }).catch(function (res) {
-            console.log("ERROR:", res.data.message);
+            callback(res);
         });
     };
     factory.update = function (snake, callback) {
@@ -858,27 +843,27 @@ module.exports = function Snake (move_function, letter) {
 	}
 
 	this.is_valid = function(){
-		if(!this.head && !this.tail){
-			return true
-		} else if(!this.head || !this.tail) {
-			return false
-		} else if(this.head.prev || this.tail.next){
-			return false
+		if (!this.head && !this.tail) {
+			return true;
+		} else if (!this.head || !this.tail) {
+			return false;
+		} else if (this.head.prev || this.tail.next) {
+			return false;
 		}
 
-		var runner = this.head
-		var count = 1
+		var runner = this.head;
+		var count = 1;
 
-		while(runner.next){
-			if(runner.next.prev != runner){
-				return false
+		while (runner.next) {
+			if (runner.next.prev != runner) {
+				return false;
 			}
-			runner = runner.next
-			count ++
+			runner = runner.next;
+			count ++;
 		}
 
-		return runner==this.tail&&count==this.length
-	}
+		return (runner === this.tail && count === this.length);
+	};
 
 	this.print = function(){
 		if(!this.is_valid){
@@ -905,13 +890,13 @@ function UserSnake (snake, map) {
 	this.letter = snake.letter;
 	this.map = map;
 	this.saved = snake.saved;
-	this.head = function () {
+	this.getHeadCoords = function () {
 		return snake.head.coords();
-	}
-	this.tail = function () {
+	};
+	this.getTailCoords = function () {
 		return snake.tail.coords();
-	}
-	var dirMethods = ["Forward", "Back", "Left", "Right"];
+	};
+	var dirMethods = ["Forward", "Left", "Right"];
 	for (var i = 0; i < dirMethods.length; i++) {
 		// this.forwardTile = function () { using "f" as direction }
 		this["get" + dirMethods[i] + "Tile"] = makeDirectionalMethod(dirMethods[i][0].toLowerCase());
@@ -919,59 +904,60 @@ function UserSnake (snake, map) {
 	function makeDirectionalMethod (dir) {
 		return function () {
 			return new Tile (snake, this.map, dir);
-		}
+		};
 	}
 }
 
-
-function Tile (snake, map, relativeDirection) {
+function Tile (snake, map, relativeDirection)
+{
 	this.rdir 	= relativeDirection;
 	this.cdir 	= "?";
 	this.row  	= 0;
 	this.col 	= 0;
 	this.letter = "?";
-	this.init(snake, map)
+	this.init(snake, map);
 }
-Tile.prototype.init = function (snake, map) {
+
+Tile.prototype.init = function (snake, map)
+{
 	var forwardDelta = determineForwardDelta(snake);
 	var delta = determineDeltaFromRelative (forwardDelta, this.rdir);
 
 	this.cdir = determineCardinalDirectionFromDelta(delta);
 	this.row  = snake.head.row + delta.row;
 	this.col  = snake.head.col + delta.col;
-}
+};
 
-function determineForwardDelta (snake) {
-	return { 
+function determineForwardDelta (snake)
+{
+	var d = { 
 		row: snake.head.next.row - snake.head.row,
 		col: snake.head.next.col - snake.head.col 
 	};
+	console.log(d);
+	return d;
 }
-function determineDeltaFromRelative (forwardDelta, rdir) {
-	if (rdir === "l" || rdir === "r") {
-		var row, col;
-		var neg = (rdir === "l") ? -1 : 1;
-		if (forwardDelta.row) {
-			col = forwardDelta.row * neg;
-			row = 0;
-		} else {
-			col = 0;
-			row = -forwardDelta.col * neg;
-		}
-		return { row: row, col: col };
-	} else {
-		switch (rdir) {
-			case "f":
-				return forwardDelta;
-			case "b":
-				return { row: -forwardDelta.row, col: -forwardDelta.col };
-			default:
-				return "?";
-		}
+
+function determineDeltaFromRelative (forwardDelta, rdir)
+{
+	// Rotate the delta based on relative direction
+	var row = forwardDelta.row;
+	var col = forwardDelta.col;
+	switch (rdir) {
+		case "f":
+			// Same
+			return forwardDelta;
+		case "l":
+			return { row: col, col: -row };
+		case "r":
+			return { row: -col, col: row };
+		default:
+			return "?";
 	}
 }
 
-function determineCardinalDirectionFromDelta (delta) {
+function determineCardinalDirectionFromDelta (delta)
+{
 	if (typeof delta.row !== "number" || typeof delta.col !== "number") {
 		return "?";
 	}
@@ -981,16 +967,20 @@ function determineCardinalDirectionFromDelta (delta) {
 	return (delta.row > 0) ? "s" : "n";
 }
 
+function SnakeNode(row, col)
+{
+	this.row = row;
+	this.col = col;
+	this.next = null;
+	this.prev = null;
+}
 
-function SnakeNode(row, col){
-	this.row = row
-	this.col = col
-	this.next = null
-	this.prev = null
-}
-SnakeNode.prototype.coords = function () {
+SnakeNode.prototype.coords = function ()
+{
+	// Safe getter for coords
 	return { row: this.row, col: this.col };
-}
+};
+
 },{}],10:[function(require,module,exports){
 
 module.exports = ["snakeFactory", "userFactory", "arenaFactory", "$scope", "$location",
@@ -1126,40 +1116,38 @@ function UserFactory ($http) {
 }];
 },{}],12:[function(require,module,exports){
 
-module.exports = function () {
-    return {
-        shuffleArray: function shuffleArray(arr)
-        {
-            // JS implementation of the Durstenfeld shuffle by StackOverflow user Laurens Holst
-            // http://stackoverflow.com/a/12646864/5749040
+module.exports =  {
+    shuffleArray: function shuffleArray(arr)
+    {
+        // JS implementation of the Durstenfeld shuffle by StackOverflow user Laurens Holst
+        // http://stackoverflow.com/a/12646864/5749040
 
-            for (var i = arr.length-1; i>0; i--) {
-                var j = Math.floor(Math.random()*(i+1));
-                var temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp;
-            }
-        },
-        mod: function mod(a,b){
-            // Make % work for negative numbers
-            return ( (a%b) + b) % b;
-        },
-        shallowCopy: function shallowCopy(obj){
-            // Kludgy function to deep copy an array or object (so that any sub-arrays/objects will be copies, not references to the original)
-            // This will break if the object holds any non-JSONible data (functions, undefined, and such), but that shouldn't be an issue for this project
-            return JSON.parse(JSON.stringify(obj));
-        },
-        emptyGrid: function emptyGrid(size, f){
-            if (!f) {
-                f = ".";
-            }
-            var new_grid = new Array(size);
-            for (var i = 0; i < new_grid.length; i++) {
-                new_grid[i] = new Array(size).fill(f);
-            }
-            return new_grid;
+        for (var i = arr.length-1; i>0; i--) {
+            var j = Math.floor(Math.random()*(i+1));
+            var temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
         }
-    };
+    },
+    mod: function mod(a,b){
+        // Make % work for negative numbers
+        return ( (a%b) + b) % b;
+    },
+    shallowCopy: function shallowCopy(obj){
+        // Kludgy function to deep copy an array or object (so that any sub-arrays/objects will be copies, not references to the original)
+        // This will break if the object holds any non-JSONible data (functions, undefined, and such), but that shouldn't be an issue for this project
+        return JSON.parse(JSON.stringify(obj));
+    },
+    emptyGrid: function emptyGrid(size, f){
+        if (!f) {
+            f = ".";
+        }
+        var new_grid = new Array(size);
+        for (var i = 0; i < new_grid.length; i++) {
+            new_grid[i] = new Array(size).fill(f);
+        }
+        return new_grid;
+    }
 };
 },{}],13:[function(require,module,exports){
 /**
@@ -34173,9 +34161,7 @@ module.exports = angular;
  */
 !function(o,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t(require("tinycolor2")):"function"==typeof define&&define.amd?define(["tinycolor2"],t):o.AngularjsColorPicker=t(o.tinycolor)}(this,function(o){"use strict";function t(){return{restrict:"E",require:["^ngModel"],scope:{ngModel:"=",options:"=?",api:"=?",eventApi:"=?"},bindToController:!0,templateUrl:"template/color-picker/directive.html",controller:r,controllerAs:"AngularColorPickerController",link:function(o,t,e,i){o.control=i,o.init()}}}function e(o){o.put("template/color-picker/directive.html",'<div class="color-picker-wrapper" ng-class="{\'color-picker-disabled\': AngularColorPickerController.options.disabled,\'color-picker-swatch-only\': AngularColorPickerController.options.swatchOnly,}">   <div class="color-picker-input-wrapper" ng-class="{\'input-group\': AngularColorPickerController.options.swatchBootstrap && AngularColorPickerController.options.swatch}">       <span ng-if="AngularColorPickerController.options.swatchPos === \'left\'" class="color-picker-swatch" ng-click="AngularColorPickerController.focus()" ng-show="AngularColorPickerController.options.swatch" ng-class="{\'color-picker-swatch-left\': AngularColorPickerController.options.swatchPos !== \'right\', \'color-picker-swatch-right\': AngularColorPickerController.options.swatchPos === \'right\', \'input-group-addon\': AngularColorPickerController.options.swatchBootstrap}"></span>       <input ng-attr-id="{{AngularColorPickerController.options.id}}" ng-attr-name="{{AngularColorPickerController.options.name}}" class="color-picker-input form-control" type="text" ng-model="AngularColorPickerController.ngModel" ng-readonly="AngularColorPickerController.options.swatchOnly" ng-disabled="AngularColorPickerController.options.disabled" ng-blur="AngularColorPickerController.onBlur($event)" ng-change="AngularColorPickerController.onChange($event)" size="7" ng-focus="AngularColorPickerController.api.open($event)" ng-class="{\'color-picker-input-swatch\': AngularColorPickerController.options.swatch && !AngularColorPickerController.options.swatchOnly && AngularColorPickerController.options.swatchPos === \'left\'}" placeholder="{{AngularColorPickerController.options.placeholder}}" ng-required="AngularColorPickerController.options.required">       <span ng-if="AngularColorPickerController.options.swatchPos === \'right\'" class="color-picker-swatch" ng-click="AngularColorPickerController.focus()" ng-show="AngularColorPickerController.options.swatch" ng-class="{\'color-picker-swatch-left\': AngularColorPickerController.options.swatchPos !== \'right\', \'color-picker-swatch-right\': AngularColorPickerController.options.swatchPos === \'right\', \'input-group-addon\': AngularColorPickerController.options.swatchBootstrap}"></span>   </div>   <div class="color-picker-panel" ng-show="AngularColorPickerController.visible" ng-class="{       \'color-picker-panel-top color-picker-panel-right\': AngularColorPickerController.options.pos === \'top right\',       \'color-picker-panel-top color-picker-panel-left\': AngularColorPickerController.options.pos === \'top left\',       \'color-picker-panel-bottom color-picker-panel-right\': AngularColorPickerController.options.pos === \'bottom right\',       \'color-picker-panel-bottom color-picker-panel-left\': AngularColorPickerController.options.pos === \'bottom left\',       \'color-picker-panel-round\': AngularColorPickerController.options.round,       \'color-picker-show-hue\': AngularColorPickerController.options.hue,       \'color-picker-show-alpha\': AngularColorPickerController.options.alpha && AngularColorPickerController.options.format !== \'hex\',       \'color-picker-show-inline\': AngularColorPickerController.options.inline,   }">       <div class="color-picker-grid-wrapper">           <div class="color-picker-row">               <div class="color-picker-grid color-picker-sprite">                   <div class="color-picker-grid-inner"></div>                   <div class="color-picker-picker">                       <div></div>                   </div>               </div>               <div class="color-picker-hue color-picker-sprite" ng-show="AngularColorPickerController.options.hue">                   <div class="color-picker-slider"></div>               </div>               <div class="color-picker-opacity color-picker-sprite" ng-show="AngularColorPickerController.options.alpha && AngularColorPickerController.options.format !== \'hex\'">                   <div class="color-picker-slider"></div>               </div>           </div>       </div>       <div class="color-picker-actions">           <button                class="color-picker-action color-picker-action-clear"               tabindex="-1               ng-class="AngularColorPickerController.options.clear.class"               ng-show="AngularColorPickerController.options.clear.show"               ng-click="AngularColorPickerController.api.clear($event)"           >               {{AngularColorPickerController.options.clear.label}}           </button><!--           --><button                class="color-picker-action color-picker-action-reset"               tabindex="-1               ng-class="AngularColorPickerController.options.reset.class"               ng-show="AngularColorPickerController.options.reset.show"               ng-click="AngularColorPickerController.api.reset($event)"           >               {{AngularColorPickerController.options.reset.label}}           </button><!--           --><button               class="color-picker-action color-picker-action-close"               tabindex="-1               ng-class="AngularColorPickerController.options.close.class"               ng-show="AngularColorPickerController.options.close.show"               ng-click="AngularColorPickerController.api.close($event)"           >               {{AngularColorPickerController.options.close.label}}           </button>       </div>   </div></div>')}o="default"in o?o.default:o;var i="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(o){return typeof o}:function(o){return o&&"function"==typeof Symbol&&o.constructor===Symbol?"symbol":typeof o},s=function(o,t){if(!(o instanceof t))throw new TypeError("Cannot call a class as a function")},n=function(){function o(o,t){for(var e=0;e<t.length;e++){var i=t[e];i.enumerable=i.enumerable||!1,i.configurable=!0,"value"in i&&(i.writable=!0),Object.defineProperty(o,i.key,i)}}return function(t,e,i){return e&&o(t.prototype,e),i&&o(t,i),t}}(),r=function(){function t(o,e,i,n,r){s(this,t),this.$scope=o,this.$element=e,this.$document=i,this.$timeout=n,this.ColorPickerOptions=r,this.$scope.init=this.init.bind(this),this.hue=0,this.saturation=void 0,this.lightness=void 0,this.opacity=void 0}return n(t,[{key:"watchNgModel",value:function(t,e){var i=this;if(!this.colorMouse)if(void 0===t||void 0===e||this.hasOwnProperty("initialNgModel")||(this.initialNgModel=t),this.hasOwnProperty("initialNgModel")&&(t===this.initialNgModel?"function"==typeof this.$scope.control[0].$setPristine&&this.$scope.control[0].$setPristine():"function"==typeof this.$scope.control[0].$setDirty&&this.$scope.control[0].$setDirty()),void 0!==t&&null!==t&&t.length>4){var s=o(t);if(s.isValid()){var n=s.toHsv();this.updateModel=!1,this.hue=n.h,this.saturation=100*n.s,this.lightness=100*n.v,this.options.alpha&&(this.opacity=100*n.a),this.$timeout(function(){i.updateModel=!0}),this.isValid=!0}else this.isValid=!1;this.$scope.control[0].$setValidity(this.$element.attr("name"),this.isValid)}else null!==t&&""!==t||(this.hue=0,this.saturation=void 0,this.lightness=void 0,this.opacity=void 0),this.swatchColor=""}},{key:"watchSwatchPos",value:function(o){var t=this;void 0!==o&&(this.initConfig(),this.$timeout(function(){t.updateSwatchBackground()}))}},{key:"setupApi",value:function(){var o=this;this.api||(this.api={}),this.api.open=function(t){return!!o.visible||(o.visible=!0,o.hueMouse=!1,o.opacityMouse=!1,o.colorMouse=!1,o.hueUpdate(),o.saturationUpdate(),o.lightnessUpdate(),o.opacityUpdate(),void o.eventApiDispatch("onOpen",[t]))},this.api.close=function(t){o.options.inline||!o.visible&&null===o.$element[0].querySelector(".color-picker-panel").offsetParent||(o.visible=!1,o.$scope.$applyAsync(),o.eventApiDispatch("onClose",[t]))},this.api.clear=function(t){""!==o.ngModel&&(o.ngModel="",o.eventApiDispatch("onClear",[t]))},this.api.reset=function(t){o.ngModel!==o.initialNgModel&&(o.ngModel=o.initialNgModel,o.eventApiDispatch("onReset",[t]))},this.api.getElement=function(){return o.$element},this.api.getScope=function(){return o.$scope}}},{key:"reInit",value:function(o){void 0!==o&&this.initConfig()}},{key:"reInitAndUpdate",value:function(o){void 0!==o&&(this.initConfig(),this.update())}},{key:"init",value:function(){var o=this;this.chrome=Boolean(window.chrome);var t=window.navigator.userAgent.match(/Android\s([0-9\.]*)/i);this.android_version=t&&t.length>1?parseFloat(t[1]):NaN;var e={mouseDown:this.onMouseDown.bind(this),mouseUp:this.onMouseUp.bind(this),mouseMove:this.onMouseMove.bind(this),keyUp:this.onKeyUp.bind(this)};this.updateModel=!0,this.$scope.$watch("AngularColorPickerController.ngModel",this.watchNgModel.bind(this)),this.$scope.$watch("AngularColorPickerController.options.swatchPos",this.watchSwatchPos.bind(this)),this.$scope.$watchGroup(["AngularColorPickerController.options.format","AngularColorPickerController.options.alpha","AngularColorPickerController.options.case"],this.reInitAndUpdate.bind(this)),this.$scope.$watchGroup(["AngularColorPickerController.options.disabled","AngularColorPickerController.options.swatchBootstrap","AngularColorPickerController.options.swatchOnly","AngularColorPickerController.options.swatch","AngularColorPickerController.options.pos","AngularColorPickerController.options.inline","AngularColorPickerController.options.placeholder","AngularColorPickerController.options.round"],this.reInit.bind(this)),this.$scope.$watch("AngularColorPickerController.api",this.setupApi.bind(this)),this.$scope.$watch("AngularColorPickerController.swatchColor",this.updateSwatchBackground.bind(this)),this.$scope.$watch("AngularColorPickerController.hue",this.hueUpdate.bind(this)),this.$scope.$watch("AngularColorPickerController.saturation",this.saturationUpdate.bind(this)),this.$scope.$watch("AngularColorPickerController.lightness",this.lightnessUpdate.bind(this)),this.$scope.$watch("AngularColorPickerController.opacity",this.opacityUpdate.bind(this)),this.$scope.$on("$destroy",function(){o.$document.off("mousedown",e.mouseDown),o.$document.off("mouseup",e.mouseUp),o.$document.off("mousemove",e.mouseMove),o.$document.off("touchstart",e.mouseDown),o.$document.off("touchend",e.mouseUp),o.$document.off("touchmove",e.mouseMove),o.$document.off("keyup",e.keyUp),o.eventApiDispatch("onDestroy")}),this.initConfig(),this.$document.on("mousedown",e.mouseDown),this.$document.on("mouseup",e.mouseUp),this.$document.on("mousemove",e.mouseMove),this.$document.on("touchstart",e.mouseDown),this.$document.on("touchend",e.mouseUp),this.$document.on("touchmove",e.mouseMove),this.$document.on("keyup",e.keyUp),this.find(".color-picker-grid").on("click",this.onColorClick.bind(this)),this.find(".color-picker-grid").on("touchend",this.onColorClick.bind(this)),this.find(".color-picker-hue").on("click",this.onHueClick.bind(this)),this.find(".color-picker-hue").on("touchend",this.onHueClick.bind(this)),this.find(".color-picker-opacity").on("click",this.onOpacityClick.bind(this)),this.find(".color-picker-opacity").on("touchend",this.onOpacityClick.bind(this))}},{key:"onMouseDown",value:function(o){this.has_moused_moved=!1,!this.options.disabled&&this.find(o.target).length>0&&(o.target.classList.contains("color-picker-grid-inner")||o.target.classList.contains("color-picker-picker")||o.target.parentNode.classList.contains("color-picker-picker")?(this.colorDown(o),this.$scope.$apply()):o.target.classList.contains("color-picker-hue")||o.target.parentNode.classList.contains("color-picker-hue")?(this.hueDown(o),this.$scope.$apply()):(o.target.classList.contains("color-picker-opacity")||o.target.parentNode.classList.contains("color-picker-opacity"))&&(this.opacityDown(o),this.$scope.$apply()))}},{key:"onMouseUp",value:function(o){this.colorMouse||this.hueMouse||this.opacityMouse||0!==this.find(o.target).length?this.colorMouse&&this.has_moused_moved?(this.colorUp(o),this.$scope.$apply(),this.onChange(o)):this.hueMouse&&this.has_moused_moved?(this.hueUp(o),this.$scope.$apply(),this.onChange(o)):this.opacityMouse&&this.has_moused_moved&&(this.opacityUp(o),this.$scope.$apply(),this.onChange(o)):(this.setupApi(),this.api.close(o),this.$scope.$apply())}},{key:"onMouseMove",value:function(o){this.colorMouse?(this.has_moused_moved=!0,this.colorChange(o),this.$scope.$apply()):this.hueMouse?(this.has_moused_moved=!0,this.hueChange(o),this.$scope.$apply()):this.opacityMouse&&(this.has_moused_moved=!0,this.opacityChange(o),this.$scope.$apply())}},{key:"onKeyUp",value:function(o){27===o.keyCode&&this.api.close(o)}},{key:"onColorClick",value:function(o){this.options.disabled||this.has_moused_moved||(this.colorChange(o),this.colorUp(o),this.$scope.$apply(),this.onChange(o))}},{key:"onHueClick",value:function(o){this.options.disabled||this.has_moused_moved||(this.hueChange(o),this.hueUp(o),this.$scope.$apply(),this.onChange(o))}},{key:"onOpacityClick",value:function(o){this.options.disabled||this.has_moused_moved||(this.opacityChange(o),this.opacityUp(o),this.$scope.$apply(),this.onChange(o))}},{key:"onChange",value:function(o){this.ngModel!==this.onChangeValue&&(this.onChangeValue=this.ngModel,this.eventApiDispatch("onChange",[o]))}},{key:"onBlur",value:function(o){this.ngModel!==this.onChangeValue&&(this.updateModel=!0,this.update()),this.eventApiDispatch("onBlur",[o]),this.api.close(o)}},{key:"initConfig",value:function(){this.options||(this.options={}),this.mergeOptions(this.options,this.ColorPickerOptions),this.visible=this.options.inline,this.options.round&&(this.options.hue=!1)}},{key:"mergeOptions",value:function(o,t){for(var e in t)t.hasOwnProperty(e)&&(o&&o.hasOwnProperty(e)?"object"===i(t[e])&&this.mergeOptions(o[e],t[e]):o[e]=t[e])}},{key:"focus",value:function(){this.find(".color-picker-input")[0].focus()}},{key:"update",value:function(){if(void 0===this.hue||void 0===this.saturation||void 0===this.lightness)return!1;var t,e=o({h:this.hue,s:this.saturation/100,v:this.lightness/100});switch(this.options.alpha&&e.setAlpha(this.opacity/100),this.swatchColor=e.toHslString(),this.options.format){case"rgb":t=e.toRgbString();break;case"hex":t=e.toHexString(),t="lower"===this.options.case?t.toLowerCase():t.toUpperCase();break;case"hex8":t=e.toHex8String(),t="lower"===this.options.case?t.toLowerCase():t.toUpperCase();break;case"hsv":t=e.toHsvString();break;default:t=e.toHslString()}this.updateModel&&(this.ngModel=t)}},{key:"updateSwatchBackground",value:function(){var o=angular.element(this.$element[0].querySelector(".color-picker-swatch"));o.css({"background-color":this.swatchColor})}},{key:"huePosUpdate",value:function(){var o=this;this.$timeout(function(){var t=o.$element[0].querySelector(".color-picker-hue"),e=angular.element(o.$element[0].querySelector(".color-picker-hue .color-picker-slider")),i=t.getBoundingClientRect();e.css({top:i.height*o.huePos/100+"px"})})}},{key:"opacityPosUpdate",value:function(){var o=this;this.$timeout(function(){var t=o.$element[0].querySelector(".color-picker-opacity"),e=angular.element(o.$element[0].querySelector(".color-picker-opacity .color-picker-slider")),i=t.getBoundingClientRect();e.css({top:i.height*o.opacityPos/100+"px"})})}},{key:"lightnessPosUpdate",value:function(){var o=this;this.$timeout(function(){var t=o.$element[0].querySelector(".color-picker-grid"),e=angular.element(o.$element[0].querySelector(".color-picker-grid .color-picker-picker")),i=t.getBoundingClientRect();o.options.round||e.css({top:i.height*o.lightnessPos/100+"px"})})}},{key:"saturationPosUpdate",value:function(){var o=this;this.$timeout(function(){var t=o.$element[0].querySelector(".color-picker-grid"),e=angular.element(o.$element[0].querySelector(".color-picker-grid .color-picker-picker")),i=t.getBoundingClientRect();o.options.round?e.css({left:i.width*o.xPos/100+"px",top:i.height*o.yPos/100+"px"}):e.css({left:i.width*o.saturationPos/100+"px"})})}},{key:"gridUpdate",value:function(){var o=angular.element(this.$element[0].querySelector(".color-picker-grid"));o.css({"background-color":this.grid})}},{key:"hueDown",value:function(o){o.stopPropagation(),o.preventDefault(),this.hueMouse=!0}},{key:"hueUp",value:function(o){o.stopPropagation(),o.preventDefault(),this.hueMouse=!1}},{key:"hueChange",value:function(o){o.stopPropagation(),o.preventDefault();var t=this.find(".color-picker-hue"),e=this.getEventPos(o);this.hue=360*(1-(e.pageY-this.offset(t).top)/t.prop("offsetHeight")),this.hue>360?this.hue=360:this.hue<0&&(this.hue=0)}},{key:"hueUpdate",value:function(){void 0!==this.hue&&(this.huePos=100*(1-this.hue/360),this.grid=o({h:this.hue,s:100,v:1}).toHslString(),this.huePos<0?this.huePos=0:this.huePos>100&&(this.huePos=100),this.huePosUpdate(),this.gridUpdate(),this.update())}},{key:"opacityDown",value:function(o){o.stopPropagation(),o.preventDefault(),this.opacityMouse=!0}},{key:"opacityUp",value:function(o){o.stopPropagation(),o.preventDefault(),this.opacityMouse=!1}},{key:"opacityChange",value:function(o){o.stopPropagation(),o.preventDefault();var t=this.find(".color-picker-opacity"),e=this.getEventPos(o);this.opacity=100*(1-(e.pageY-this.offset(t).top)/t.prop("offsetHeight")),this.opacity>100?this.opacity=100:this.opacity<0&&(this.opacity=0)}},{key:"opacityUpdate",value:function(){void 0!==this.opacity&&(this.opacityPos=100*(1-this.opacity/100),this.opacityPos<0?this.opacityPos=0:this.opacityPos>100&&(this.opacityPos=100),this.opacityPosUpdate(),this.update())}},{key:"colorDown",value:function(o){o.stopPropagation(),o.preventDefault(),this.colorMouse=!0}},{key:"colorUp",value:function(o){o.stopPropagation(),o.preventDefault(),this.colorMouse=!1}},{key:"colorChange",value:function(o){o.stopPropagation(),o.preventDefault();var t=this.find(".color-picker-grid-inner"),e=this.getEventPos(o),i=this.offset(t);if(this.options.round){var s=2*(e.pageX-i.left)/t.prop("offsetWidth")-1,n=-(2*(e.pageY-i.top)/t.prop("offsetHeight"))+1,r=Math.sqrt(s*s+n*n),l=Math.atan2(n,s);this.saturation=100*r;var a=57.29577951308233*l;a<0&&(a+=360),this.hue=a,this.lightness=100}else this.saturation=(e.pageX-i.left)/t.prop("offsetWidth")*100,this.lightness=100*(1-(e.pageY-i.top)/t.prop("offsetHeight")),this.saturation>100?this.saturation=100:this.saturation<0&&(this.saturation=0),this.lightness>100?this.lightness=100:this.lightness<0&&(this.lightness=0)}},{key:"saturationUpdate",value:function(o){if(void 0!==this.saturation){if(this.options.round){var t=.01745329251994*this.hue,e=Math.cos(t)*this.saturation,i=-Math.sin(t)*this.saturation;this.xPos=.5*(e+100),this.yPos=.5*(i+100);var s=50,n=Math.pow(s-this.xPos,2)+Math.pow(s-this.yPos,2),r=Math.pow(s,2);if(n>r){var l=Math.atan2(this.yPos-s,this.xPos-s);this.xPos=Math.cos(l)*s+s,this.yPos=Math.sin(l)*s+s}}else this.saturationPos=this.saturation/100*100,this.saturationPos<0?this.saturationPos=0:this.saturationPos>100&&(this.saturationPos=100);this.saturationPosUpdate(),this.update()}}},{key:"lightnessUpdate",value:function(){void 0!==this.lightness&&(this.lightnessPos=100*(1-this.lightness/100),this.lightnessPos<0?this.lightnessPos=0:this.lightnessPos>100&&(this.lightnessPos=100),this.lightnessPosUpdate(),this.update())}},{key:"getEventPos",value:function(o){return 0===o.type.search("touch")?o.changedTouches[0]:o}},{key:"eventApiDispatch",value:function(o,t){this.eventApi&&"function"==typeof this.eventApi[o]&&(t||(t=[]),t.unshift(this.ngModel),t.unshift(this.api),this.eventApi[o].apply(this,t))}},{key:"find",value:function(o){var t,e=this.wrapper?this.wrapper[0]:this.$element[0],i=[];if(!o)return i;if("string"==typeof o){if(1!==(t=e.nodeType)&&9!==t)return[];i=e.querySelectorAll(o)}else e.contains(o)&&i.push(o);return angular.element(i)}},{key:"offset",value:function(o){var t,e,i,s,n=o[0];if(n)return n.getClientRects().length?(i=n.getBoundingClientRect(),i.width||i.height?(s=n.ownerDocument,e=null!==s&&s===s.window?s:9===s.nodeType&&s.defaultView,t=s.documentElement,this.chrome&&this.android_version<6&&screen.width<=768?{top:i.top-t.clientTop,left:i.left-t.clientLeft}:{top:i.top+e.pageYOffset-t.clientTop,left:i.left+e.pageXOffset-t.clientLeft}):i):{top:0,left:0}}}]),t}();r.$inject=["$scope","$element","$document","$timeout","ColorPickerOptions"],e.$inject=["$templateCache"];var l=function o(){return s(this,o),{required:!1,disabled:!1,hue:!0,alpha:!0,round:!1,case:"upper",format:"hsl",pos:"bottom left",swatch:!0,swatchOnly:!1,swatchPos:"left",swatchBootstrap:!0,inline:!1,placeholder:"",id:void 0,name:void 0,close:{show:!1,label:"Close",class:""},clear:{show:!1,label:"Clear",class:""},reset:{show:!1,label:"Reset",class:""}}},a=angular.module("color.picker",[]).service("ColorPickerOptions",l).directive("colorPicker",t).run(e);return a});
 
-},{"tinycolor2":21}],19:[function(require,module,exports){
-
-},{}],20:[function(require,module,exports){
+},{"tinycolor2":20}],19:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -34186,7 +34172,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 // TinyColor v1.4.1
 // https://github.com/bgrins/TinyColor
 // Brian Grinstead, MIT License
@@ -35383,7 +35369,7 @@ else {
 
 })(Math);
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var indexOf = require('indexof');
 
 var Object_keys = function (obj) {
@@ -35523,4 +35509,4 @@ exports.createContext = Script.createContext = function (context) {
     return copy;
 };
 
-},{"indexof":20}]},{},[5]);
+},{"indexof":19}]},{},[5]);

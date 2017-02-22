@@ -1,10 +1,10 @@
 <div ng-controller="arenaController">
-
 	<div class="container">
 		<h3>Arena</h3>
-		<div>
+		<div ng-class="(game) ? '' : 'text-center '">
 			<p>Visit <a href="#/snakes">Snakes Page</a> to create new match.</p>
 			<p>Visit <a href="#/editor">Editor Page</a> to create new snake.</p>
+			<div ng-if="game.testing" style="font-size: 2em"><a href="#/editor">RETURN TO EDITOR</a></div>
 			<button ng-if="game" class="btn btn-default" ng-click="togglePause()"><span ng-class="(paused) ? 'glyphicon-play' : 'glyphicon-pause'" class="glyphicon"></span></button>
 		</div>
 		<div class="col-sm-10 col-sm-offset-1">

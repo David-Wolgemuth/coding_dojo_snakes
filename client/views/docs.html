@@ -1,3 +1,64 @@
 <div ng-controller="docsController">
-	<h1>DOCS</h1>
+	<h1>Documentation</h1>
+
+	Function must return a cardinal direction:  "n", "e", "s", "w".  ("?" can be returned to go straight)
+
+	Available Variables:
+
+		<ul>
+			<li>snake</li>
+			<ul>
+				<li>letter</li>
+				<ul>
+					<li>type: string</li>
+					<li>character that represent snake on map</li>
+					<li>ex: "b"</li>
+				</ul>
+				<li>saved</li>
+				<ul>
+					<li>type: object</li>
+					<li>values stored in "saved" key can be accessed later (anything stored in snake object will be lost after each move)</li>
+					<li>ex: { myFavoriteColor: "blue" }</li>
+				</ul>
+				<li>getHeadCoords</li>
+				<ul>
+					<li>type: function</li>
+					<li>returns object with coordinates of snake's head</li>
+					<li>ex: () => { row: 6, col: 6 }</li>
+				</ul>
+				<li>getTailCoords</li>
+				<ul>
+					<li>see "getHeadCoords"</li>
+				</ul>
+				<li>getForwardTile</li>
+				<ul>
+				type: function
+				returns object
+					rdir: relative direction: "f" (forward), "l" (left), "r" (right)
+					cdir: cardinal direction: "n", "e", "s", "w"
+					row:  number
+					col:  number
+					letter: letter on map (see letters)
+				ex: () => { rdir: "l", cdir: "e", row: 6, col: 12, letter: "*" }
+				</ul>
+			<li>getLeftTile</li>
+				<ul>
+				</ul>
+				see "getForwardTile"
+			<li>getRightTile</li>
+				<ul>
+				</ul>
+				see "getForwardTile"
+			</ul>
+		</ul>
+		- map
+
+		- utils
+
+
+
+	`*` : apple	
+	`.` : empty
+	`?` : unknown
+	[a-zA-Z] : snake
 </div>

@@ -6,8 +6,6 @@ function SnakeFactory ($http) {
         current: null,
         snakes: []
     };
-
-
     factory.index = function (callback, force)
     {
         if (!force && factory.snakes.length > 0) {
@@ -100,9 +98,9 @@ function SnakeFactory ($http) {
             data: snake
         }).then(function (res) {
             factory.snakes.push(res.data.snake);
-            console.log("Saved Snake:", res.data.snake);
+            callback(null, res.data.snake);
         }).catch(function (res) {
-            console.log("ERROR:", res.data.message);
+            callback(res);
         });
     };
     factory.update = function (snake, callback) {
